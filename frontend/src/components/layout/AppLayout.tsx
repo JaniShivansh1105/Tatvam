@@ -4,15 +4,18 @@ import { Sidebar } from "./Sidebar";
 import { MobileSidebar } from "./Sidebar/MobileSidebar";
 import { Topbar } from "./Topbar";
 import { CommandPaletteModal } from "./CommandPalette/CommandPaletteModal";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { useAuthStore } from "@/store/auth-store";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  // We consume the context just to ensure we are wrapped in LayoutProvider if needed,
-  // but LayoutProvider must wrap AppLayout itself. See the root layout implementation.
+  const { isAuthenticated, hasCompletedOnboarding, hasInitialized } = useAuthStore();
+
+  const showOnboarding = hasInitialized && isAuthenticated && !hasCompletedOnboarding;
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-[#F8F9FF] selection:bg-[#6C5CE7]/20 font-sans relative">
       
-      {/* Global Ambient Background (Subtle version for authenticated app) */}
+      {/* Global Ambient Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-0 w-full h-full bg-[#F8F9FF] z-0" />
         <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#E5E1FF] blur-[120px] opacity-30 mix-blend-multiply z-0" />
@@ -27,7 +30,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col flex-1 min-w-0 relative overflow-hidden">
         <Topbar />
         
-        {/* The children will typically be a PageContainer wrapping the page specific content */}
         <main className="flex-1 overflow-hidden relative flex flex-col">
           {children}
         </main>
@@ -35,6 +37,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Global Modals */}
       <CommandPaletteModal />
+      {showOnboarding && <OnboardingWizard />}
 
     </div>
   );

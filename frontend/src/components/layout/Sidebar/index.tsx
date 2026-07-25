@@ -8,11 +8,13 @@ import { navigationConfig } from "@/config/navigation";
 import { SidebarGroup } from "./SidebarGroup";
 import { useLayout } from "@/context/LayoutContext";
 import { useAuthStore } from "@/store/auth-store";
+import { UserAvatar } from "@/components/ui/UserAvatar";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/config/routes";
 
 export function Sidebar() {
   const { isSidebarCollapsed, toggleSidebar } = useLayout();
+  const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = () => {
@@ -80,17 +82,26 @@ export function Sidebar() {
         ))}
       </div>
 
-      {/* Logout Footer */}
-      <div className="p-4 shrink-0 border-t border-[rgba(108,92,231,0.06)]">
+      {/* User Avatar Footer Card */}
+      <div className="p-3 shrink-0 border-t border-[rgba(108,92,231,0.06)]">
+        {!isSidebarCollapsed && (
+          <Link href="/dashboard/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-[#F8F9FF] transition-colors mb-1 group">
+            <UserAvatar name={user?.fullName} email={user?.email} userId={user?.id} size="sm" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-[13px] font-bold text-[#1B1D35] truncate group-hover:text-[#6C5CE7] transition-colors">{user?.fullName || "Student User"}</span>
+              <span className="text-[11px] text-[#A0AEC0] truncate">{user?.email || ""}</span>
+            </div>
+          </Link>
+        )}
         <button
           onClick={handleLogout}
           className={cn(
             "flex items-center w-full rounded-[16px] transition-colors duration-200 text-[#E53E3E] hover:bg-[#FFF5F5]",
-            isSidebarCollapsed ? "justify-center h-11" : "px-4 py-2"
+            isSidebarCollapsed ? "justify-center h-11" : "px-3 py-2"
           )}
         >
-          <LogOut className={cn("shrink-0", isSidebarCollapsed ? "w-6 h-6" : "w-5 h-5 mr-3")} />
-          {!isSidebarCollapsed && <span className="font-medium text-[14.5px]">Log out</span>}
+          <LogOut className={cn("shrink-0", isSidebarCollapsed ? "w-5 h-5" : "w-4 h-4 mr-2.5")} />
+          {!isSidebarCollapsed && <span className="font-semibold text-[13.5px]">Log out</span>}
         </button>
       </div>
     </motion.aside>

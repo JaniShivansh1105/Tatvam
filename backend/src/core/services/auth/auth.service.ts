@@ -265,6 +265,7 @@ export class AuthService {
             language: true,
           }
         },
+        learningDNA: true,
       },
     });
 
@@ -432,8 +433,8 @@ export class AuthService {
     return true;
   }
 
-  static async updateProfile(userId: string, data: { fullName?: string; bio?: string; country?: string; timezone?: string }) {
-    const { fullName, bio, country, timezone } = data;
+  static async updateProfile(userId: string, data: { fullName?: string; bio?: string; country?: string; timezone?: string; dna?: any }) {
+    const { fullName, bio, country, timezone, dna } = data;
     
     if (fullName) {
       await prisma.user.update({
@@ -456,6 +457,30 @@ export class AuthService {
         ...(timezone !== undefined && { timezone }),
       },
     });
+
+    if (dna) {
+      await prisma.learningDNA.upsert({
+        where: { userId },
+        create: {
+          userId,
+          visualPreference: dna.visualPreference ?? 0.5,
+          pacePreference: dna.pacePreference ?? 0.5,
+          detailPreference: dna.detailPreference ?? 0.5,
+          audioPreference: dna.audioPreference ?? 0.5,
+          readingPreference: dna.readingPreference ?? 0.5,
+          animationPreference: dna.animationPreference ?? 0.5,
+          examplePreference: dna.examplePreference ?? 0.5,
+          analogyPreference: dna.analogyPreference ?? 0.5,
+        },
+        update: {
+          ...(dna.visualPreference !== undefined && { visualPreference: dna.visualPreference }),
+          ...(dna.pacePreference !== undefined && { pacePreference: dna.pacePreference }),
+          ...(dna.detailPreference !== undefined && { detailPreference: dna.detailPreference }),
+          ...(dna.analogyPreference !== undefined && { analogyPreference: dna.analogyPreference }),
+          ...(dna.examplePreference !== undefined && { examplePreference: dna.examplePreference }),
+        },
+      });
+    }
 
     return AuthService.getMe(userId);
   }

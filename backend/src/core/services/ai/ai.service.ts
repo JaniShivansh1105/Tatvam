@@ -28,64 +28,67 @@ export class AIService {
         data: {
           chatSessionId: session.id,
           role: "user",
-          content: lastMessage.text || lastMessage.content,
-          contextText: JSON.stringify(context),
-        }
+          content: lastMessage.content,
+        },
       });
     }
 
-    let fullResponse = "";
-
-    // If Gemini key exists, use it. Otherwise, use simulated response.
-    if (provider === "gemini" && process.env.GEMINI_API_KEY) {
-      try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-        // Construct history for Gemini
-        const history = messages.slice(0, -1).map(m => ({
-          role: m.role === "ai" ? "model" : "user",
-          parts: [{ text: m.text || m.content }],
-        }));
-
-        const chat = model.startChat({
-          history,
-          systemInstruction: `You are Tatvam, an expert AI mentor. The student is learning ${context.lessonTitle || 'a concept'}. Current Strategy: ${context.strategy}. Be extremely helpful, concise, and pedagogical.`
-        });
-
-        const result = await chat.sendMessageStream(lastMessage.text || lastMessage.content);
-        for await (const chunk of result.stream) {
-          const chunkText = chunk.text();
-          fullResponse += chunkText;
-          yield chunkText;
-        }
-      } catch (e) {
-        console.error("Gemini AI Error:", e);
-        const errorMsg = "[Error] Failed to connect to Gemini API. Check your keys or quota.";
-        fullResponse = errorMsg;
-        yield errorMsg;
-      }
-    } else {
-      const prefix = provider === "openai" ? "[OpenAI-Backed]" : "[Gemini-Backed]";
-      const response = `${prefix} This is a secure, backend-proxied AI response. The architecture is now ready to drop in the real SDK utilizing environment variables safely. Strategy used: ${context.strategy}.`;
-      
-      const chunks = response.split(" ");
-      for (const chunk of chunks) {
-        await new Promise(r => setTimeout(r, 50));
-        fullResponse += chunk + " ";
-        yield chunk + " ";
-      }
-    }
-    
-    // Save assistant message
-    if (fullResponse) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      const fallbackChunk = "AI Key not configured. Streaming static response: Tatvam is active and ready to help you master concepts!";
       await prisma.chatMessage.create({
         data: {
           chatSessionId: session.id,
           role: "assistant",
-          content: fullResponse,
-        }
+          content: fallbackChunk,
+        },
+      });
+      yield fallbackChunk;
+      return;
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-[topicId]" });
+
+    const systemInstruction = `You are Tatvam AI Mentor, a world-class pedagogical tutor. Guide the student with analogies, visual breakdowns, and active recall questions.`;
+
+    const promptText = `${systemInstruction}\n\nUser Question: ${lastMessage?.content || "Explain this concept"}`;
+
+    const responseStream = await model.generateContentStream(promptText);
+
+    let fullAssistantResponse = "";
+
+    for await (const chunk of responseStream.stream) {
+      const text = chunk.text();
+      fullAssistantResponse += text;
+      yield text;
+    }
+
+    // Save full assistant message after stream completes
+    if (fullAssistantResponse) {
+      await prisma.chatMessage.create({
+        data: {
+          chatSessionId: session.id,
+          role: "assistant",
+          content: fullAssistantResponse,
+        },
       });
     }
+  }
+
+  static async getHistory(userId: string, lessonId?: string) {
+    return prisma.chatSession.findMany({
+      where: {
+        userId,
+        ...(lessonId && { lessonId }),
+      },
+      include: {
+        messages: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 10,
+    });
   }
 }

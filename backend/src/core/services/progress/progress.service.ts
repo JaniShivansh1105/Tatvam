@@ -7,7 +7,42 @@ export class ProgressService {
     if (!dna) {
       dna = await prisma.learningDNA.create({ data: { userId } });
     }
-    return dna;
+
+    // Dynamic evolution based on platform telemetry
+    const masteries = await prisma.conceptMastery.findMany({ where: { userId } });
+    const practiceSets = await prisma.practiceSet.findMany({ where: { userId, status: "completed" } });
+    const notesCount = await prisma.smartNote.count({ where: { userId } });
+    const flashcardsCount = await prisma.flashcard.count({ where: { userId } });
+    const bookmarksCount = await prisma.bookmark.count({ where: { userId } });
+    const activityCount = await prisma.activity.count({ where: { userId } });
+
+    const avgMasteryConfidence = masteries.length > 0
+      ? masteries.reduce((sum, m) => sum + m.confidence, 0) / masteries.length
+      : dna.averageConfidence;
+
+    const avgQuizScore = practiceSets.length > 0
+      ? practiceSets.reduce((sum, p) => sum + (p.score || 0), 0) / practiceSets.length / 100
+      : dna.quizAccuracy;
+
+    // Evolve preferences smoothly
+    const evolvedVisual = Math.min(1.0, Math.max(0.2, dna.visualPreference + (bookmarksCount > 0 ? 0.05 : 0)));
+    const evolvedReading = Math.min(1.0, Math.max(0.2, dna.readingPreference + (notesCount > 0 ? 0.05 : 0)));
+    const evolvedPace = Math.min(1.0, Math.max(0.2, 0.4 + (avgMasteryConfidence * 0.5)));
+    const evolvedDetail = Math.min(1.0, Math.max(0.2, 0.5 + (flashcardsCount * 0.02)));
+
+    const updatedDNA = await prisma.learningDNA.update({
+      where: { userId },
+      data: {
+        visualPreference: parseFloat(evolvedVisual.toFixed(2)),
+        readingPreference: parseFloat(evolvedReading.toFixed(2)),
+        pacePreference: parseFloat(evolvedPace.toFixed(2)),
+        detailPreference: parseFloat(evolvedDetail.toFixed(2)),
+        quizAccuracy: parseFloat(avgQuizScore.toFixed(2)),
+        averageConfidence: parseFloat(avgMasteryConfidence.toFixed(2)),
+      },
+    });
+
+    return updatedDNA;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

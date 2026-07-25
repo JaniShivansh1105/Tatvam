@@ -46,6 +46,8 @@ export default function LoginPage() {
       
       setToken(accessToken);
       setUser(user);
+      const isCompleted = !!(user?.learningDNA && user?.profile?.country);
+      useAuthStore.getState().setHasCompletedOnboarding(isCompleted);
       
       router.push(ROUTES.DASHBOARD.HOME);
     } catch (error: any) {

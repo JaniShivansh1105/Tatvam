@@ -1,18 +1,26 @@
 "use client";
 
+import React from "react";
 import { useAuthStore } from "@/store/auth-store";
+import { UserAvatar } from "@/components/ui/UserAvatar";
+import Link from "next/link";
 
 export function UserMenu() {
   const user = useAuthStore((state) => state.user);
-  
-  // Simple initials fallback
-  const initials = user?.fullName
-    ? user.fullName.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()
-    : "US";
 
   return (
-    <button className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#6C5CE7] to-[#8B7CF6] flex items-center justify-center text-white shadow-sm ring-2 ring-white/50 hover:ring-[#6C5CE7]/30 transition-all cursor-pointer">
-      <span className="text-[13px] font-bold tracking-wider">{initials}</span>
-    </button>
+    <Link 
+      href="/dashboard/profile"
+      className="flex items-center gap-3 p-1 rounded-full hover:bg-[#F8F9FF] transition-all group cursor-pointer"
+      title="View Profile"
+    >
+      <UserAvatar 
+        name={user?.fullName} 
+        email={user?.email} 
+        userId={user?.id} 
+        size="md"
+        className="group-hover:scale-105 transition-transform"
+      />
+    </Link>
   );
 }

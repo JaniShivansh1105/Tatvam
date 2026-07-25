@@ -67,6 +67,7 @@ export default function RegisterPage() {
       
       setToken(accessToken);
       setUser(user);
+      useAuthStore.getState().setHasCompletedOnboarding(false);
       
       router.push(ROUTES.DASHBOARD.HOME);
     } catch (error: any) {

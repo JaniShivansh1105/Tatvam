@@ -9,6 +9,9 @@ interface User {
   fullName: string;
   username: string | null;
   avatarUrl: string | null;
+  profile?: any;
+  preference?: any;
+  learningDNA?: any;
 }
 
 interface AuthState {
@@ -17,8 +20,10 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   hasInitialized: boolean;
+  hasCompletedOnboarding: boolean;
   setToken: (token: string) => void;
   setUser: (user: User) => void;
+  setHasCompletedOnboarding: (completed: boolean) => void;
   fetchMe: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -33,6 +38,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: true,
       hasInitialized: false,
+      hasCompletedOnboarding: false,
 
       setToken: (token: string) => {
         set({ accessToken: token, isAuthenticated: !!token });
@@ -42,8 +48,11 @@ export const useAuthStore = create<AuthState>()(
         set({ user });
       },
 
+      setHasCompletedOnboarding: (completed: boolean) => {
+        set({ hasCompletedOnboarding: completed });
+      },
+
       fetchMe: async () => {
-        // Prevent duplicate network calls from React Strict Mode or late-mounting components
         if (get().hasInitialized) return;
         if (fetchMePromise) return fetchMePromise;
 
@@ -54,14 +63,17 @@ export const useAuthStore = create<AuthState>()(
             const { data } = await apiClient.get("/auth/me");
             const fetchedUser = data.data.user;
             
+            // Structured check using learningDNA relation and profile country column
+            const isCompleted = get().hasCompletedOnboarding || !!(fetchedUser?.learningDNA && fetchedUser?.profile?.country);
+
             set({
               user: fetchedUser,
               isAuthenticated: true,
               isLoading: false,
               hasInitialized: true,
+              hasCompletedOnboarding: isCompleted,
             });
 
-            // Sync language preference
             if (fetchedUser?.preference?.language?.name) {
               const { useEngineStore } = await import("./engine-store");
               useEngineStore.getState().setLanguage(fetchedUser.preference.language.name);
@@ -93,7 +105,8 @@ export const useAuthStore = create<AuthState>()(
             accessToken: null,
             isAuthenticated: false,
             isLoading: false,
-            hasInitialized: true, // we know they are definitively anonymous now
+            hasInitialized: true,
+            hasCompletedOnboarding: false,
           });
           if (typeof window !== "undefined") {
             window.location.href = ROUTES.LOGIN;
@@ -103,7 +116,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      partialize: (state) => ({ accessToken: state.accessToken }),
+      partialize: (state) => ({ 
+        accessToken: state.accessToken,
+        hasCompletedOnboarding: state.hasCompletedOnboarding,
+      }),
     }
   )
 );
