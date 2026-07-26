@@ -6,12 +6,19 @@ import { ContentArea } from "@/components/layout/ContentArea";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { Settings, Bell, Lock, Shield, Moon, Eye, LogOut, Check, Loader2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
+import { useShallow } from "zustand/react/shallow";
+import { useEngineStore } from "@/store/engine-store";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import { useMutation } from "@tanstack/react-query";
 
 export default function SettingsPage() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, setUser } = useAuthStore(useShallow(state => ({
+    user: state.user,
+    logout: state.logout,
+    setUser: state.setUser
+  })));
+  const setEngineLanguage = useEngineStore(s => s.setLanguage);
   const router = useRouter();
   
   const [activeTab, setActiveTab] = useState("general");
@@ -31,7 +38,13 @@ export default function SettingsPage() {
       const res = await apiClient.put("/auth/preferences", payload);
       return res.data.data.preference;
     },
-    onSuccess: () => {
+    onSuccess: (updatedPreference) => {
+      if (user) {
+        setUser({ ...user, preference: updatedPreference });
+      }
+      if (updatedPreference.language?.name) {
+        setEngineLanguage(updatedPreference.language.name);
+      }
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     },

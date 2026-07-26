@@ -12,35 +12,24 @@ interface ConceptMastery {
   struggleCount: number;
 }
 
-export function ConceptMasteryCard({ lessonId = "placeholder-lesson-id" }: { lessonId?: string }) {
+export function ConceptMasteryCard({ lessonId }: { lessonId?: string }) {
   const [masteryData, setMasteryData] = useState<ConceptMastery[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMastery = async () => {
-      if (lessonId === "placeholder-lesson-id") {
-        setMasteryData([
-          { conceptId: "Newton's First Law", confidence: 0.9, trend: "IMPROVING", struggleCount: 0 },
-          { conceptId: "Inertia", confidence: 0.8, trend: "STABLE", struggleCount: 1 },
-          { conceptId: "Net Force", confidence: 0.4, trend: "DECLINING", struggleCount: 3 },
-          { conceptId: "Friction", confidence: 0.2, trend: "STABLE", struggleCount: 2 },
-        ]);
+      if (!lessonId) {
+        setMasteryData([]);
         setLoading(false);
         return;
       }
 
       try {
         const res = await apiClient.get(`/progress/lessons/${lessonId}/mastery`);
-        setMasteryData(res.data.data.mastery);
+        setMasteryData(res.data.data.mastery || []);
       } catch (error) {
         console.error("Failed to fetch concept mastery", error);
-        // Fallback to mock data for presentation if no lesson exists yet
-        setMasteryData([
-          { conceptId: "Newton's First Law", confidence: 0.9, trend: "IMPROVING", struggleCount: 0 },
-          { conceptId: "Inertia", confidence: 0.8, trend: "STABLE", struggleCount: 1 },
-          { conceptId: "Net Force", confidence: 0.4, trend: "DECLINING", struggleCount: 3 },
-          { conceptId: "Friction", confidence: 0.2, trend: "STABLE", struggleCount: 2 },
-        ]);
+        setMasteryData([]);
       } finally {
         setLoading(false);
       }

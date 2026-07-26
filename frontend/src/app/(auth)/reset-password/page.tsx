@@ -11,8 +11,15 @@ import { Loader2, AlertCircle, ArrowLeft, Lock, Eye, EyeOff, CheckCircle } from 
 import { apiClient } from "../../../lib/api-client";
 import { ROUTES } from "@/config/routes";
 
+const passwordValidation = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+  .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+  .regex(/[0-9]/, "Password must contain at least one number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
+
 const resetSchema = z.object({
-  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  newPassword: passwordValidation,
   confirmPassword: z.string()
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
@@ -62,11 +69,9 @@ export default function ResetPasswordPage() {
       }, 2000);
       
     } catch (error: any) {
-      if (error?.response?.data?.message) {
-        setGlobalError(error.response.data.message);
-      } else {
-        setGlobalError("An unexpected error occurred. Please try again.");
-      }
+      const apiError = error?.response?.data?.error;
+      const message = apiError?.message || error?.response?.data?.message || "An unexpected error occurred. Please try again.";
+      setGlobalError(message);
     } finally {
       setIsLoading(false);
     }

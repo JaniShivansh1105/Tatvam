@@ -37,7 +37,7 @@ export function QuickActions({ data }: QuickActionsProps) {
       <div className="flex flex-col gap-3 h-full">
         {/* PRIMARY ACTION */}
         {primaryAction && (
-          <Link href={primaryAction.href} className="block group">
+          <Link href={primaryAction.href} prefetch={true} className="block group">
             <GlassCard className={`p-4 flex items-center justify-between ${primaryAction.theme.bg} ${primaryAction.theme.hoverBorder} transition-all duration-300 group-hover:-translate-y-0.5 shadow-sm hover:shadow-md`}>
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white">
@@ -56,7 +56,7 @@ export function QuickActions({ data }: QuickActionsProps) {
         {/* SECONDARY ACTIONS GRID */}
         <div className="grid grid-cols-1 gap-3">
           {secondaryActions.map((action, index) => (
-            <Link key={index} href={action.href} className="block group">
+            <Link key={index} href={action.href} prefetch={true} className="block group">
               <GlassCard className={`p-3 flex items-center gap-4 bg-white/60 hover:bg-white transition-all duration-300 group-hover:-translate-y-0.5 ${action.theme.hoverBorder} hover:shadow-sm cursor-pointer border-transparent`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${action.theme.bg} ${action.theme.text}`}>
                   {getIcon(action.iconType, "w-4 h-4")}

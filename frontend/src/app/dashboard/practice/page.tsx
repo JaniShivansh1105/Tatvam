@@ -13,6 +13,8 @@ export default function PracticePage() {
   const queryClient = useQueryClient();
   const [activeSetId, setActiveSetId] = useState<string | null>(null);
 
+  const [sessionStartTime, setSessionStartTime] = useState(Date.now());
+
   const { data: practiceSets, isLoading } = useQuery({
     queryKey: ["practiceSets"],
     queryFn: async () => {
@@ -22,10 +24,10 @@ export default function PracticePage() {
   });
 
   const generateSetMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (type: string = "practice") => {
       const res = await apiClient.post("/practice/generate", { 
         lessonId: null, 
-        type: "practice", 
+        type, 
         difficulty: "mixed" 
       });
       return res.data.data;
@@ -33,12 +35,14 @@ export default function PracticePage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["practiceSets"] });
       setActiveSetId(data.id);
+      setSessionStartTime(Date.now());
     }
   });
 
   const submitAnswerMutation = useMutation({
     mutationFn: async ({ questionId, answer }: { questionId: string, answer: string }) => {
-      await apiClient.post(`/practice/question/${questionId}/submit`, { answer, timeSpentMs: 5000 });
+      const timeSpentMs = Date.now() - sessionStartTime;
+      await apiClient.post(`/practice/question/${questionId}/submit`, { answer, timeSpentMs });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["practiceSets"] });
@@ -51,6 +55,8 @@ export default function PracticePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["practiceSets"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["roadmap"] });
       setActiveSetId(null);
     }
   });
@@ -89,7 +95,8 @@ export default function PracticePage() {
                   <h3 className="text-[20px] font-bold">Quick Practice</h3>
                   <p className="text-white/80 text-[14px] mt-2 mb-6">10 tailored questions based on your weakest areas.</p>
                   <button 
-                    onClick={() => generateSetMutation.mutate()}
+                    onClick={() => generateSetMutation.mutate("practice")}
+                    disabled={generateSetMutation.isPending}
                     className="flex items-center gap-2 bg-white text-[#6C5CE7] px-5 py-2.5 rounded-full font-bold text-[14px] hover:shadow-lg transition-all"
                   >
                     {generateSetMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
@@ -100,7 +107,10 @@ export default function PracticePage() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 border border-[#E2E8F0] hover:border-[#6C5CE7] transition-colors cursor-pointer group">
+                <div 
+                  onClick={() => !generateSetMutation.isPending && generateSetMutation.mutate("mock_test")}
+                  className="bg-white rounded-3xl p-6 border border-[#E2E8F0] hover:border-[#6C5CE7] transition-colors cursor-pointer group"
+                >
                   <Target className="w-12 h-12 text-[#6C5CE7] mb-4 group-hover:scale-110 transition-transform" />
                   <h3 className="text-[20px] font-bold text-[#1B1D35]">Mock Assessment</h3>
                   <p className="text-[#A0AEC0] text-[14px] mt-2">Full length exam simulation.</p>

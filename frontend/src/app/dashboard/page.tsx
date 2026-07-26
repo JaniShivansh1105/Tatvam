@@ -5,7 +5,6 @@ import { ContentArea } from "@/components/layout/ContentArea";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { WelcomeHero } from "@/components/dashboard/WelcomeHero";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
-import { AIInsightCard } from "@/components/dashboard/AIInsightCard";
 import { LearningDNACard } from "@/components/dashboard/LearningDNACard";
 import { ConceptMasteryCard } from "@/components/dashboard/ConceptMasteryCard";
 import { GoalCard } from "@/components/dashboard/GoalCard";
@@ -19,10 +18,34 @@ import { DASHBOARD_CONSTANTS } from "@/components/dashboard/constants";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { useAuthStore } from "@/store/auth-store";
-import { Loader2 } from "lucide-react";
+
+function DashboardSkeleton() {
+  return (
+    <PageContainer>
+      <ContentArea>
+        <DashboardShell>
+          <div className={`${DASHBOARD_CONSTANTS.layout.leftColSpan} flex flex-col gap-5 animate-pulse`}>
+            <div className="h-24 bg-white/70 rounded-3xl border border-white/80" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="h-56 bg-white/70 rounded-3xl border border-white/80" />
+              <div className="h-56 bg-white/70 rounded-3xl border border-white/80" />
+            </div>
+            <div className="h-32 bg-white/70 rounded-3xl border border-white/80" />
+            <div className="h-64 bg-white/70 rounded-3xl border border-white/80" />
+          </div>
+          <div className={`${DASHBOARD_CONSTANTS.layout.rightColSpan} flex flex-col gap-5 pt-0 xl:pt-[84px] animate-pulse`}>
+            <div className="h-44 bg-white/70 rounded-3xl border border-white/80" />
+            <div className="h-56 bg-white/70 rounded-3xl border border-white/80" />
+            <div className="h-44 bg-white/70 rounded-3xl border border-white/80" />
+          </div>
+        </DashboardShell>
+      </ContentArea>
+    </PageContainer>
+  );
+}
 
 export default function DashboardPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ["dashboard", user?.id],
@@ -31,14 +54,11 @@ export default function DashboardPage() {
       return res.data.data;
     },
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 min cache
   });
 
   if (isLoading || !dashboardData) {
-    return (
-      <div className="w-full h-full flex items-center justify-center min-h-[500px]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#6C5CE7]" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const data = dashboardData;

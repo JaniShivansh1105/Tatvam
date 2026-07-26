@@ -129,6 +129,13 @@ export class AuthService {
       select: {
         ...safeUserSelect,
         hashedPassword: true,
+        profile: true,
+        preference: {
+          include: {
+            language: true,
+          },
+        },
+        learningDNA: true,
       },
     });
 
@@ -159,17 +166,7 @@ export class AuthService {
       },
     });
 
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      fullName: user.fullName,
-      avatarUrl: user.avatarUrl,
-      emailVerified: user.emailVerified,
-      accountStatus: user.accountStatus,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    const { hashedPassword, ...safeUser } = user;
 
     return {
       user: safeUser,

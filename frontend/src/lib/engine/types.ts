@@ -9,9 +9,22 @@ export interface ConceptState {
 }
 
 export type LearningDNA = {
-  traits: string[]; // e.g. "Visual Learner", "Needs Reinforcement", "Analogy Driven"
-  preferredPace: "Slow" | "Normal" | "Fast";
-  curiosityLevel: "Low" | "Medium" | "High";
+  visualPreference: number;
+  pacePreference: number;
+  detailPreference: number;
+  audioPreference: number;
+  readingPreference: number;
+  animationPreference: number;
+  examplePreference: number;
+  analogyPreference: number;
+  learningSpeed: number;
+  readingSpeed: number;
+  attentionSpan: number;
+  quizAccuracy: number;
+  revisionFrequency: number;
+  averageSessionDuration: number;
+  averageConfidence: number;
+  averageAttempts: number;
 };
 
 export type TeachingStrategy = 

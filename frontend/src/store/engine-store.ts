@@ -134,14 +134,7 @@ export const useEngineStore = create<EngineState>((set, get) => ({
 
   // ─── Global Actions ───────────────────────────────────────────────────
   setReadingMode: (mode) => set({ readingMode: mode }),
-  setLanguage: async (lang) => {
-    set({ language: lang });
-    try {
-      await apiClient.put("/auth/preferences", { preferredLanguageName: lang });
-    } catch (error) {
-      console.error("Failed to persist language preference", error);
-    }
-  },
+  setLanguage: (lang) => set({ language: lang }),
 
   // ─── Lesson Lifecycle ─────────────────────────────────────────────────
   initializeLesson: async (lessonId, timelineItems) => {
@@ -278,7 +271,8 @@ export const useEngineStore = create<EngineState>((set, get) => ({
       const res = await apiClient.put(`/workspace/notes/${id}`, data);
       set((state) => {
         if (state.currentLessonId !== lessonId) return state;
-        return { notes: state.notes.map((n) => (n.id === id ? res.data.data.note : n)) };
+        // Only update server-generated metadata to prevent race conditions during typing
+        return { notes: state.notes.map((n) => (n.id === id ? { ...n, versionCount: res.data.data.note.versionCount, updatedAt: res.data.data.note.updatedAt } : n)) };
       });
     } catch {
       // Silent failure
@@ -325,7 +319,7 @@ export const useEngineStore = create<EngineState>((set, get) => ({
       const res = await apiClient.patch(`/workspace/bookmarks/${id}`, data);
       set((state) => {
         if (state.currentLessonId !== lessonId) return state;
-        return { bookmarks: state.bookmarks.map((b) => (b.id === id ? res.data.data.bookmark : b)) };
+        return { bookmarks: state.bookmarks.map((b) => (b.id === id ? { ...b, updatedAt: res.data.data.bookmark.updatedAt } : b)) };
       });
     } catch {
       // Silent failure

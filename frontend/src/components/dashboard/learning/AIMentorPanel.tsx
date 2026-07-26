@@ -5,6 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, BrainCircuit, Maximize2, Minimize2, Sparkles, HelpCircle, ArrowUpRight } from "lucide-react";
 import { useEngineStore } from "@/store/engine-store";
 import { useAuthStore } from "@/store/auth-store";
+import { useShallow } from "zustand/react/shallow";
+import dynamic from "next/dynamic";
+const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
+import remarkGfm from "remark-gfm";
 
 interface AIMentorPanelProps {
   isOpen: boolean;
@@ -32,7 +36,12 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const { determineStrategy, dna, currentStrategy } = useEngineStore();
+  const { determineStrategy, dna, currentStrategy, currentLessonId } = useEngineStore(useShallow(state => ({
+    determineStrategy: state.determineStrategy,
+    dna: state.dna,
+    currentStrategy: state.currentStrategy,
+    currentLessonId: state.currentLessonId
+  })));
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -41,6 +50,34 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/ai/mentor/history?lessonId=${currentLessonId || 'null'}`;
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken || ''}` }
+        });
+        const json = await res.json();
+        if (json.success && json.data.length > 0) {
+          // Find the most recent active session
+          const session = json.data[0];
+          if (session.messages && session.messages.length > 0) {
+            const historyMsgs = session.messages.map((m: any) => ({
+              role: m.role === "assistant" ? "ai" : "user",
+              text: m.content || m.text
+            }));
+            setMessages(historyMsgs);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load mentor history", err);
+      }
+    }
+    if (isOpen) {
+      loadHistory();
+    }
+  }, [currentLessonId, isOpen]);
 
   useEffect(() => {
     const handleOpenMentor = (e: CustomEvent) => {
@@ -77,6 +114,7 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
           messages: newMessages,
           context: {
             strategy,
+            lessonId: currentLessonId || undefined,
             lessonTitle: "Current Lesson",
             learningState: dna
           }
@@ -143,6 +181,7 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
   };
 
   const isLastMessageAI = messages.length > 0 && messages[messages.length - 1].role === "ai" && !messages[messages.length - 1].isStreaming;
+  const isCurrentlyStreaming = messages.some(m => m.isStreaming);
 
   return (
     <AnimatePresence>
@@ -206,14 +245,22 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
                   
                   {msg.role === "ai" && !msg.isStreaming && idx > 0 ? (
                     <div className="flex flex-col gap-3">
-                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      <div className="prose prose-sm max-w-none text-current prose-p:leading-relaxed prose-pre:bg-[#F8F9FF] prose-pre:text-[#2D3748] prose-pre:border prose-pre:border-[#E2E8F0]">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                      </div>
                       <div className="p-3 bg-[#F8F9FF] rounded-xl border border-[#E2E8F0] text-[12.5px] text-[#4A5568]">
                         <span className="font-bold text-[#6C5CE7]">Pedagogical Strategy:</span> {currentStrategy || "Adaptive Explanation"}
                       </div>
                     </div>
                   ) : (
                     <>
-                      {msg.text}
+                      {msg.role === "ai" ? (
+                        <div className="prose prose-sm max-w-none text-current prose-p:leading-relaxed">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        msg.text
+                      )}
                       {msg.isStreaming && (
                         <span className="inline-flex items-center ml-2 gap-1 align-middle">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#6C5CE7] animate-ping" />
@@ -263,13 +310,13 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
               type="text" 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
+              onKeyDown={(e) => e.key === "Enter" && !isCurrentlyStreaming && handleSend(input)}
               placeholder="Ask Tatvam AI anything..."
               className="w-full h-11 bg-[#F8F9FF] rounded-full border border-[#E2E8F0] pl-4 pr-12 text-[14px] outline-none focus:border-[#6C5CE7] focus:ring-[3px] focus:ring-[#6C5CE7]/15 transition-all text-[#1B1D35]"
             />
             <button 
               onClick={() => handleSend(input)}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isCurrentlyStreaming}
               className="absolute right-7 top-1/2 -translate-y-1/2 flex items-center justify-center text-[#6C5CE7] hover:text-[#8B7CF6] disabled:opacity-30 disabled:hover:text-[#6C5CE7] transition-all"
             >
               <Send className="w-5 h-5" />

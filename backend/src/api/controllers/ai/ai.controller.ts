@@ -26,4 +26,15 @@ export class AIController {
       res.end();
     }
   }
+
+  static async getHistory(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const { lessonId } = req.query;
+    try {
+      const history = await AIService.getHistory(userId, lessonId as string | undefined);
+      res.json({ success: true, data: history });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch history" });
+    }
+  }
 }

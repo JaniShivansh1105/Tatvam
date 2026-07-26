@@ -44,52 +44,109 @@ export class ContentService {
   }
 
   static async getDashboardContent(userId: string) {
-    // This removes all mocks for the dashboard by returning real aggregated data
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { profile: true },
-    });
+    // Parallelize all independent database queries for maximum performance
+    const [user, nextLesson, activitiesCount, masteries, activePlan, studySessions, recentActivities, roadmapData] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true },
+      }),
+      prisma.lesson.findFirst({
+        orderBy: { order: "asc" },
+        include: {
+          subject: true,
+          topics: { orderBy: { order: "asc" }, include: { sections: true } },
+        },
+      }),
+      prisma.activity.count({ where: { userId } }),
+      prisma.conceptMastery.findMany({ where: { userId } }),
+      prisma.studyPlan.findFirst({
+        where: { userId, progress: { lt: 100 } },
+        orderBy: { startDate: "desc" },
+      }),
+      prisma.studySession.findMany({
+        where: { userId, endTime: { not: null } },
+      }),
+      prisma.activity.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: { lesson: true },
+      }),
+      ContentService.getRoadmap(userId),
+    ]);
 
     if (!user) throw new NotFoundError("User not found");
 
-    await ContentService.ensureDefaultLessons();
-    // Fetch the next logical lesson the user should take
-    const nextLesson = await prisma.lesson.findFirst({
-      orderBy: { order: "asc" },
-      include: {
-        subject: true,
-        topics: { orderBy: { order: "asc" } },
-      }
-    });
-
-    // We can compute stats here based on activities and mastery
-    const activitiesCount = await prisma.activity.count({ where: { userId } });
-    const masteries = await prisma.conceptMastery.findMany({ where: { userId } });
     const completedLessons = new Set(masteries.filter(m => m.confidence >= 0.8).map(m => m.lessonId)).size;
     const avgConfidence = masteries.length > 0 
       ? masteries.reduce((acc, m) => acc + m.confidence, 0) / masteries.length 
       : 0;
     const accuracy = `${Math.round(avgConfidence * 100)}%`;
-    const learningTime = activitiesCount > 0 ? `${Math.round(activitiesCount * 5)}m` : "0m";
+    
+    let totalLearningMinutes = 0;
+    let todayMinutes = 0;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
 
-    // Get the most active plan for goal — GoalCard expects { current, target }
-    const activePlan = await prisma.studyPlan.findFirst({
-      where: { userId, progress: { lt: 100 } },
-      orderBy: { startDate: "desc" }
-    });
-    
-    // Compute study time in minutes from study sessions
-    const totalStudyMinutes = await prisma.studySession.aggregate({
-      where: { userId, endTime: { not: null } },
-      _count: true,
-    }).then(r => r._count * 15); // estimate 15min per session
-    const dailyGoalMinutes = 30; // default daily goal
-    const todayMinutes = Math.min(totalStudyMinutes, dailyGoalMinutes);
-    
+    for (const session of studySessions) {
+      if (session.endTime && session.startTime) {
+        const minutes = (session.endTime.getTime() - session.startTime.getTime()) / (1000 * 60);
+        totalLearningMinutes += Math.max(0, minutes);
+        if (session.startTime >= todayStart) {
+          todayMinutes += Math.max(0, minutes);
+        }
+      }
+    }
+    const learningTime = totalLearningMinutes > 0 ? `${Math.round(totalLearningMinutes)}m` : "0m";
+
+    const dailyGoalMinutes = 30;
     const goal = {
-      current: activePlan ? Math.round(activePlan.progress * dailyGoalMinutes / 100) : todayMinutes,
+      current: activePlan ? Math.round(activePlan.progress * dailyGoalMinutes / 100) : Math.round(todayMinutes),
       target: dailyGoalMinutes,
     };
+
+    let estimatedLessonMinutes = 20;
+    if (nextLesson && nextLesson.topics) {
+      const sectionCount = nextLesson.topics.reduce((acc, topic) => acc + (topic.sections?.length || 0), 0);
+      estimatedLessonMinutes = Math.max(10, sectionCount * 5);
+    }
+
+    let aiInsight = { message: "Ready to learn something new today?", type: "encouragement" };
+    if (todayMinutes >= dailyGoalMinutes) {
+      aiInsight = { message: "Daily goal reached! Awesome work today.", type: "celebration" };
+    } else if (user.profile?.streak && user.profile.streak >= 3) {
+      aiInsight = { message: `You're on a ${user.profile.streak}-day streak. Don't break it!`, type: "motivation" };
+    } else if (completedLessons > 0) {
+      aiInsight = { message: `You've mastered ${completedLessons} lessons. Keep building that foundation.`, type: "encouragement" };
+    }
+
+    const quickActions = [];
+    if (nextLesson) {
+      quickActions.push({
+        title: "Continue Lesson",
+        description: nextLesson.title,
+        iconType: "play",
+        href: `/dashboard/learn/${nextLesson.slug}`,
+        isPrimary: true,
+        theme: { bg: "bg-[#6C5CE7]", text: "text-white", hoverBorder: "hover:border-[#8B7CF6]" }
+      });
+    }
+    quickActions.push({
+      title: "Practice Tests",
+      description: "Test your knowledge",
+      iconType: "brain",
+      href: "/dashboard/practice",
+      isPrimary: false,
+      theme: { bg: "bg-[#F0FFF4]", text: "text-[#38A169]", hoverBorder: "hover:border-[#C6F6D5]" }
+    });
+    quickActions.push({
+      title: "Study Plan",
+      description: "View your timeline",
+      iconType: "map",
+      href: "/dashboard/plans",
+      isPrimary: false,
+      theme: { bg: "bg-[#EBF8FF]", text: "text-[#3182CE]", hoverBorder: "hover:border-[#BEE3F8]" }
+    });
 
     return {
       user: {
@@ -103,7 +160,7 @@ export class ContentService {
         title: nextLesson.title,
         topic: nextLesson.subject.name,
         progress: 0,
-        estimatedMinutes: 20,
+        estimatedMinutes: estimatedLessonMinutes,
       } : null,
       stats: {
         learningTime,
@@ -112,32 +169,27 @@ export class ContentService {
         currentStreak: user.profile?.streak || 0,
       },
       goal,
-      aiInsight: {
-        message: "You're doing great! Keep up the good work.",
-        type: "encouragement",
-      },
-      roadmap: await ContentService.getRoadmap(userId),
-      quickActions: [],
-      recentActivity: await prisma.activity.findMany({
-        where: { userId },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: { lesson: true },
-      }).then(acts => acts.map((a, idx) => ({
-        id: idx,
-        title: a.type,
+      aiInsight,
+      roadmap: roadmapData,
+      quickActions,
+      recentActivity: recentActivities.map((a) => ({
+        id: a.id,
+        title: a.lesson?.title || a.type,
         type: a.type.toLowerCase().includes("lesson") ? "lesson" : "practice",
         time: ContentService.timeAgo(a.createdAt),
-      })))
+      })),
     };
   }
 
   static async getRoadmap(userId: string) {
-    await ContentService.ensureDefaultLessons();
+    if ((await prisma.lesson.count()) === 0) {
+      await ContentService.ensureDefaultLessons();
+    }
     const lessons = await prisma.lesson.findMany({
       orderBy: { order: "asc" },
       include: {
         subject: true,
+        topics: true,
       },
     });
 
@@ -160,7 +212,7 @@ export class ContentService {
         title: l.title,
         status,
         difficulty: l.difficulty.charAt(0).toUpperCase() + l.difficulty.slice(1),
-        time: "15 min",
+        time: `${Math.max(10, (l.topics?.length || 1) * 10)} min`,
       };
     });
   }

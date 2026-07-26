@@ -5,6 +5,7 @@ import { ArrowLeft, Globe2, BookOpen, Focus, LayoutTemplate } from "lucide-react
 import Link from "next/link";
 import { ROUTES } from "@/config/routes";
 import { useEngineStore } from "@/store/engine-store";
+import { useShallow } from "zustand/react/shallow";
 
 interface LessonHeaderProps {
   title: string;
@@ -13,7 +14,12 @@ interface LessonHeaderProps {
 }
 
 export function LessonHeader({ title, topic }: LessonHeaderProps) {
-  const { readingMode, setReadingMode, language, setLanguage } = useEngineStore();
+  const { readingMode, setReadingMode, language, setLanguage } = useEngineStore(useShallow(state => ({
+    readingMode: state.readingMode,
+    setReadingMode: state.setReadingMode,
+    language: state.language,
+    setLanguage: state.setLanguage
+  })));
   const LANGUAGES = ["English", "ગુજરાતી", "हिन्दी", "मराठी", "தமிழ்", "తెలుగు", "ಕನ್ನಡ", "മലയാളം", "বাংলা", "ਪੰਜਾਬੀ"];
 
   return (

@@ -13,7 +13,7 @@ export const getRefreshTokenCookieOptions = (): CookieOptions => {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     sameSite: "strict",
-    path: "/api/auth/refresh",
+    path: "/api/auth",
     maxAge,
   };
 };
@@ -23,6 +23,6 @@ export const getClearCookieOptions = (): CookieOptions => {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     sameSite: "strict",
-    path: "/api/auth/refresh",
+    path: "/api/auth",
   };
 };

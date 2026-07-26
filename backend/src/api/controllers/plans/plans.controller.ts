@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../../../data/prisma.js";
+import { AIService } from "../../../core/services/ai/ai.service.js";
 
 export class PlansController {
   static async getPlans(req: Request, res: Response) {
@@ -22,11 +23,13 @@ export class PlansController {
 
   static async createPlan(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const { title, type, tasks } = req.body;
+    const { title, type } = req.body;
     try {
       const now = new Date();
       const endDate = new Date();
       endDate.setDate(now.getDate() + (type === "weekly" ? 7 : 1));
+
+      const generatedTasks = await AIService.generateStudyPlanTasks(userId, type || "weekly");
 
       const plan = await prisma.studyPlan.create({
         data: {
@@ -36,7 +39,7 @@ export class PlansController {
           startDate: now,
           endDate: endDate,
           tasks: {
-            create: (tasks || []).map((t: any) => ({
+            create: generatedTasks.map((t: any) => ({
               title: t.title,
               lessonId: t.lessonId
             }))

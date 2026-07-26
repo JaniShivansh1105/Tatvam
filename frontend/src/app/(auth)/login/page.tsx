@@ -46,21 +46,18 @@ export default function LoginPage() {
       
       setToken(accessToken);
       setUser(user);
-      const isCompleted = !!(user?.learningDNA && user?.profile?.country);
-      useAuthStore.getState().setHasCompletedOnboarding(isCompleted);
+      
+      // Pre-warm dashboard cache in background while navigating
+      apiClient.get("/content/dashboard").catch(() => {});
       
       router.push(ROUTES.DASHBOARD.HOME);
     } catch (error: any) {
       if (error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
         setGlobalError("Unable to connect to the server. Please check your internet connection.");
-      } else if (error?.response?.data?.message) {
-        setGlobalError(error.response.data.message);
-      } else if (error?.response?.status === 401) {
-        setGlobalError("Invalid email or password. Please try again.");
-      } else if (error?.response?.status >= 500) {
-        setGlobalError("Our servers are currently experiencing issues. Please try again later.");
       } else {
-        setGlobalError("Login failed due to a system error. Please try again.");
+        const apiError = error?.response?.data?.error;
+        const errorMessage = apiError?.message || error?.response?.data?.message || "Invalid email or password. Please try again.";
+        setGlobalError(errorMessage);
       }
     } finally {
       setIsLoading(false);

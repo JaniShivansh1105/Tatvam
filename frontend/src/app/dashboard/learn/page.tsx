@@ -13,7 +13,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { Loader2 } from "lucide-react";
 
 export default function TopicExplorerPage() {
-  const { user } = useAuthStore();
+  const user = useAuthStore((state) => state.user);
   
   const { data: KNOWLEDGE_GRAPH, isLoading } = useQuery({
     queryKey: ["roadmap", user?.id],
@@ -22,6 +22,7 @@ export default function TopicExplorerPage() {
       return res.data.data;
     },
     enabled: !!user?.id,
+    staleTime: 1000 * 60 * 5, // 5 min cache
   });
 
   if (isLoading || !KNOWLEDGE_GRAPH) {
@@ -83,6 +84,7 @@ export default function TopicExplorerPage() {
 
                     <Link 
                       href={isLocked ? "#" : `/dashboard/learn/${node.id}`}
+                      prefetch={true}
                       className={`block bg-white border rounded-[24px] p-6 shadow-sm transition-all duration-300 ${
                         isLocked 
                           ? "border-[#E2E8F0] cursor-not-allowed" 

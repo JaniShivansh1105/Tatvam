@@ -1,12 +1,22 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useShallow } from "zustand/react/shallow";
 import { useEngineStore, Note } from "@/store/engine-store";
 import { Edit3, Sparkles, Tag, Search, Trash2, Folder, History, Type, Hash, MoreVertical, Archive } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
+const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
+import remarkGfm from "remark-gfm";
 
 export function SmartNotes() {
-  const { notes, addNote, updateNote, removeNote, generateFlashcard } = useEngineStore();
+  const { notes, addNote, updateNote, removeNote, generateFlashcard } = useEngineStore(useShallow(state => ({
+    notes: state.notes,
+    addNote: state.addNote,
+    updateNote: state.updateNote,
+    removeNote: state.removeNote,
+    generateFlashcard: state.generateFlashcard
+  })));
   
   const [inputText, setInputText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -139,7 +149,9 @@ export function SmartNotes() {
                       </div>
                     </div>
 
-                    <p className="text-[13px] text-[#4A5568] mb-3 line-clamp-3 leading-relaxed whitespace-pre-wrap">{note.text}</p>
+                    <div className="prose prose-sm max-w-none text-[#4A5568] mb-3 line-clamp-4 leading-relaxed prose-p:my-1 prose-headings:my-1 prose-ul:my-1">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.text}</ReactMarkdown>
+                    </div>
                     
                     {note.summary && (
                       <div className="p-2 bg-[#F8F9FF] rounded-lg border border-[rgba(108,92,231,0.1)] mb-3 flex gap-2">
@@ -165,7 +177,7 @@ export function SmartNotes() {
                       </div>
                       
                       <button 
-                        onClick={() => generateFlashcard(note.text, note.summary || "Define this concept.")}
+                        onClick={() => generateFlashcard(note.title || "Key Concept from Note", note.summary || note.text)}
                         className="text-[10px] font-bold text-[#6C5CE7] hover:text-[#5A4BDB] uppercase tracking-wider bg-[#6C5CE7]/10 hover:bg-[#6C5CE7]/20 px-2 py-1 rounded transition-colors"
                       >
                         Create Card

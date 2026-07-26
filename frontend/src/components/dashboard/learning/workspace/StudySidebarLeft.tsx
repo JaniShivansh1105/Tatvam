@@ -3,10 +3,18 @@
 import React, { useState, useMemo } from "react";
 import { CheckCircle2, Circle, Bookmark as BookmarkIcon, Search, Filter, MoreVertical, Edit3, Trash2, Pin, Star, Archive, RefreshCw, Folder } from "lucide-react";
 import { useEngineStore, Bookmark } from "@/store/engine-store";
+import { useShallow } from "zustand/react/shallow";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function StudySidebarLeft() {
-  const { timeline, activities, bookmarks, activeSectionId, updateBookmark, removeBookmark } = useEngineStore();
+  const { timeline, activities, bookmarks, activeSectionId, updateBookmark, removeBookmark } = useEngineStore(useShallow(state => ({
+    timeline: state.timeline,
+    activities: state.activities,
+    bookmarks: state.bookmarks,
+    activeSectionId: state.activeSectionId,
+    updateBookmark: state.updateBookmark,
+    removeBookmark: state.removeBookmark
+  })));
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
@@ -256,7 +264,7 @@ export function StudySidebarLeft() {
                     <button 
                       onClick={() => {
                         const { generateFlashcard } = useEngineStore.getState();
-                        generateFlashcard(bm.content, bm.note || "Define this concept.");
+                        generateFlashcard(bm.note || "Key Concept from Bookmark", bm.content);
                       }}
                       className="text-[10px] font-bold text-[#6C5CE7] hover:text-[#5A4BDB] uppercase tracking-wider bg-[#6C5CE7]/10 hover:bg-[#6C5CE7]/20 px-2 py-1 rounded transition-colors ml-auto"
                     >

@@ -9,11 +9,11 @@ export class TeachingStrategyEngine {
     if (requestType === "Challenge Me") return "Challenge Understanding";
     
     // Implicit determination based on DNA
-    if (dna.traits.includes("Analogy Driven")) {
+    if (dna.analogyPreference > 0.6) {
       return "Use Analogy";
     }
     
-    if (dna.traits.includes("Needs Simpler Explanations")) {
+    if (dna.pacePreference < 0.4 || dna.detailPreference > 0.6) {
       return "Explain Simply";
     }
 

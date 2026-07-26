@@ -271,6 +271,10 @@ export class PracticeController {
         data: { status: "completed", score }
       });
 
+      const { ProgressService } = await import("../../../core/services/progress/progress.service.js");
+      await ProgressService.logActivity(set.userId, "PRACTICE_COMPLETED", set.lessonId || undefined, { setId, score });
+      await ProgressService.getDNA(set.userId);
+
       res.json({ success: true, data: updated });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to complete set" });

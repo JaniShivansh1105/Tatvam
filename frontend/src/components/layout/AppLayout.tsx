@@ -8,9 +8,24 @@ import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { useAuthStore } from "@/store/auth-store";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, hasCompletedOnboarding, hasInitialized } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasCompletedOnboarding = useAuthStore((state) => state.hasCompletedOnboarding);
+  const hasInitialized = useAuthStore((state) => state.hasInitialized);
 
   const showOnboarding = hasInitialized && isAuthenticated && !hasCompletedOnboarding;
+
+  // Strict Onboarding Enforcer: Lock screen on OnboardingWizard until completed
+  if (showOnboarding) {
+    return (
+      <div className="flex h-[100dvh] w-full overflow-hidden bg-[#F8F9FF] selection:bg-[#6C5CE7]/20 font-sans relative">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full bg-[#F8F9FF] z-0" />
+          <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#E5E1FF] blur-[120px] opacity-30 mix-blend-multiply z-0" />
+        </div>
+        <OnboardingWizard />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[100dvh] w-full overflow-hidden bg-[#F8F9FF] selection:bg-[#6C5CE7]/20 font-sans relative">
@@ -37,7 +52,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Global Modals */}
       <CommandPaletteModal />
-      {showOnboarding && <OnboardingWizard />}
 
     </div>
   );

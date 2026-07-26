@@ -48,11 +48,9 @@ export default function ForgotPasswordPage() {
       setEmail(data.email);
       setStep("otp");
     } catch (error: any) {
-      if (error?.response?.data?.message) {
-        setGlobalError(error.response.data.message);
-      } else {
-        setGlobalError("An unexpected error occurred. Please try again.");
-      }
+      const apiError = error?.response?.data?.error;
+      const message = apiError?.message || error?.response?.data?.message || "An unexpected error occurred. Please try again.";
+      setGlobalError(message);
     } finally {
       setIsLoading(false);
     }
@@ -73,11 +71,9 @@ export default function ForgotPasswordPage() {
       // Navigate to reset password with token
       router.push(`${ROUTES.RESET_PASSWORD}?token=${resetToken}`);
     } catch (error: any) {
-      if (error?.response?.data?.message) {
-        setGlobalError(error.response.data.message);
-      } else {
-        setGlobalError("Invalid or expired OTP. Please try again.");
-      }
+      const apiError = error?.response?.data?.error;
+      const message = apiError?.message || error?.response?.data?.message || "Invalid or expired OTP. Please try again.";
+      setGlobalError(message);
     } finally {
       setIsLoading(false);
     }

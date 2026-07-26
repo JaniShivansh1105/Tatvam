@@ -4,11 +4,15 @@ import React, { useEffect, useState } from "react";
 import { useEngineStore } from "@/store/engine-store";
 import { Search, FileText, Bookmark as BookmarkIcon, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShallow } from "zustand/react/shallow";
 
 export function WorkspaceSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const { notes, bookmarks } = useEngineStore();
+  const { notes, bookmarks } = useEngineStore(useShallow(state => ({
+    notes: state.notes,
+    bookmarks: state.bookmarks
+  })));
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -80,7 +84,13 @@ export function WorkspaceSearch() {
                   <div className="flex flex-col gap-1 mb-2">
                     <div className="px-3 py-1.5 text-[11px] font-bold text-[#718096] uppercase tracking-wider">Notes</div>
                     {filteredNotes.map(note => (
-                      <button key={note.id} onClick={() => setIsOpen(false)} className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#F8F9FF] text-left transition-colors group">
+                      <button 
+                        key={note.id} 
+                        onClick={() => {
+                          setIsOpen(false);
+                        }} 
+                        className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#F8F9FF] text-left transition-colors group"
+                      >
                         <FileText className="w-5 h-5 text-[#6C5CE7] shrink-0 mt-0.5" />
                         <div className="flex flex-col gap-1">
                           <span className="text-[14px] text-[#1B1D35] font-medium line-clamp-1">{note.text}</span>
@@ -95,7 +105,17 @@ export function WorkspaceSearch() {
                   <div className="flex flex-col gap-1">
                     <div className="px-3 py-1.5 text-[11px] font-bold text-[#718096] uppercase tracking-wider">Bookmarks</div>
                     {filteredBookmarks.map(bm => (
-                      <button key={bm.id} onClick={() => setIsOpen(false)} className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#F8F9FF] text-left transition-colors group">
+                      <button 
+                        key={bm.id} 
+                        onClick={() => {
+                          setIsOpen(false);
+                          if (bm.sectionId) {
+                            const el = document.getElementById(`section-${bm.sectionId}`);
+                            if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }
+                        }} 
+                        className="flex items-start gap-3 p-3 rounded-xl hover:bg-[#F8F9FF] text-left transition-colors group"
+                      >
                         <BookmarkIcon className="w-5 h-5 text-[#F6AD55] shrink-0 mt-0.5" />
                         <div className="flex flex-col gap-1">
                           <span className="text-[14px] text-[#1B1D35] font-medium line-clamp-1">{bm.content}</span>

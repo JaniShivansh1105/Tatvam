@@ -6,7 +6,7 @@ import { useEngineStore } from "@/store/engine-store";
 
 export function TextSelectionToolbar() {
   const [selection, setSelection] = useState<{ text: string, x: number, y: number } | null>(null);
-  const { addNote, addBookmark } = useEngineStore();
+  const { addNote, addBookmark, activeSectionId } = useEngineStore();
 
   useEffect(() => {
     const handleSelection = () => {
@@ -98,7 +98,7 @@ export function TextSelectionToolbar() {
         <Edit3 className="w-4 h-4" />
       </button>
       <button 
-        onClick={() => handleAction(() => addBookmark("concept", selection.text))} 
+        onClick={() => handleAction(() => addBookmark("concept", selection.text, activeSectionId))} 
         className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/70 hover:text-white" 
         title="Bookmark"
       >

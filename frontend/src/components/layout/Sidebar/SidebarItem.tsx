@@ -31,6 +31,7 @@ export function SidebarItem({ item, onClick }: SidebarItemProps) {
   const content = (
     <Link
       href={item.href}
+      prefetch={true}
       onClick={onClick}
       className={cn(
         "flex items-center relative group rounded-[16px] transition-all duration-300 overflow-hidden",

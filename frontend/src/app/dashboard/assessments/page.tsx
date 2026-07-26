@@ -55,6 +55,9 @@ export default function AssessmentsPage() {
 
   const assessments = practiceSets?.filter((s: any) => s.type === "mock_test") || [];
   const completedAssessments = assessments.filter((s: any) => s.status === "completed");
+  const avgScore = completedAssessments.length > 0 
+    ? Math.round(completedAssessments.reduce((acc: number, s: any) => acc + (s.score || 0), 0) / completedAssessments.length) 
+    : 0;
 
   return (
     <PageContainer>
@@ -121,15 +124,15 @@ export default function AssessmentsPage() {
                 <div className="relative w-40 h-40 mx-auto mb-4">
                    <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                      <circle cx="50" cy="50" r="45" fill="none" stroke="#F1F5F9" strokeWidth="10" />
-                     <circle cx="50" cy="50" r="45" fill="none" stroke="#6C5CE7" strokeWidth="10" strokeDasharray="283" strokeDashoffset={283 - (283 * 72) / 100} />
+                     <circle cx="50" cy="50" r="45" fill="none" stroke="#6C5CE7" strokeWidth="10" strokeDasharray="283" strokeDashoffset={283 - (283 * avgScore) / 100} />
                    </svg>
                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                     <span className="text-[32px] font-extrabold text-[#1B1D35]">72%</span>
+                     <span className="text-[32px] font-extrabold text-[#1B1D35]">{avgScore}%</span>
                    </div>
                 </div>
                 
                 <p className="text-center text-[#4A5568] text-[14px] leading-relaxed">
-                  Based on your practice and assessments, you are <strong className="text-[#6C5CE7]">72% ready</strong> for your final exams.
+                  Based on your practice and assessments, you are <strong className="text-[#6C5CE7]">{avgScore}% ready</strong> for your final exams.
                 </p>
              </div>
           </div>

@@ -4,27 +4,38 @@ import React, { useState, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { ContentArea } from "@/components/layout/ContentArea";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { User, Mail, Globe, Calendar, Clock, Edit2, Save, Loader2, Sparkles, Award, GraduationCap, BookOpen, Target, AlertCircle } from "lucide-react";
+import { User, Mail, Globe, Calendar, Clock, Edit2, Save, Loader2, Sparkles, Award, GraduationCap, BookOpen, Target, AlertCircle, BrainCircuit, Check } from "lucide-react";
 import { useAuthStore } from "@/store/auth-store";
+import { useShallow } from "zustand/react/shallow";
 import { UserAvatar } from "@/components/ui/UserAvatar";
 import { apiClient } from "@/lib/api-client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ProfilePage() {
-  const { user, setUser } = useAuthStore();
+  const { user, setUser } = useAuthStore(useShallow(state => ({
+    user: state.user,
+    setUser: state.setUser
+  })));
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const profileData = (user as any)?.profile;
+  const dnaData = (user as any)?.learningDNA;
 
-  // Keystroke live avatar preview state
+  // Keystroke live avatar preview & individual profile field states
   const [previewName, setPreviewName] = useState(user?.fullName || "");
   const [bio, setBio] = useState(profileData?.bio || "Physics enthusiast preparing for competitive exams.");
   const [country, setCountry] = useState(profileData?.country || "India");
   const [timezone, setTimezone] = useState(profileData?.timezone || "Asia/Kolkata (IST)");
   const [language, setLanguage] = useState((user as any)?.preference?.language?.name || "English");
+
+  // Individual Academic & Learning State
+  const [academicLevel, setAcademicLevel] = useState("University");
+  const [grade, setGrade] = useState("Undergraduate - Year 2");
+  const [institution, setInstitution] = useState("Central University");
+  const [stream, setStream] = useState("Science / Engineering");
 
   // Synchronize when user state changes externally
   useEffect(() => {
@@ -49,7 +60,6 @@ export default function ProfilePage() {
       return res.data.data.user;
     },
     onMutate: async (newPayload) => {
-      // Snapshot previous user for rollback
       const previousUser = user;
       setErrorMessage(null);
       
@@ -69,8 +79,7 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ["achievements"] });
       setIsEditing(false);
     },
-    onError: (err: any, _newPayload, context) => {
-      // Rollback on error
+    onError: (_err: any, _newPayload, context) => {
       if (context?.previousUser) {
         setUser(context.previousUser);
         setPreviewName(context.previousUser.fullName);
@@ -80,7 +89,6 @@ export default function ProfilePage() {
   });
 
   const handleCancel = () => {
-    // Revert form state and live avatar preview to original user values
     setPreviewName(user?.fullName || "");
     setBio(profileData?.bio || "Physics enthusiast preparing for competitive exams.");
     setCountry(profileData?.country || "India");
@@ -201,13 +209,56 @@ export default function ProfilePage() {
                         </p>
                       </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Academic Level</label>
+                          <select
+                            value={academicLevel}
+                            onChange={(e) => setAcademicLevel(e.target.value)}
+                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] outline-none text-[14px] font-medium text-[#1B1D35]"
+                          >
+                            <option>School (K-12)</option>
+                            <option>College / High School</option>
+                            <option>University</option>
+                            <option>Working Professional</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Grade / Semester</label>
+                          <input 
+                            type="text"
+                            value={grade}
+                            onChange={(e) => setGrade(e.target.value)}
+                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] outline-none text-[14px] font-medium text-[#1B1D35]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Board / Institution</label>
+                          <input 
+                            type="text"
+                            value={institution}
+                            onChange={(e) => setInstitution(e.target.value)}
+                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] outline-none text-[14px] font-medium text-[#1B1D35]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Stream / Field</label>
+                          <input 
+                            type="text"
+                            value={stream}
+                            onChange={(e) => setStream(e.target.value)}
+                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] outline-none text-[14px] font-medium text-[#1B1D35]"
+                          />
+                        </div>
+                      </div>
+
                       <div>
-                        <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Bio & Academic Summary</label>
+                        <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">Bio & Learning Goals</label>
                         <textarea 
                           value={bio}
                           onChange={(e) => setBio(e.target.value)}
                           rows={3}
-                          className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] focus:ring-[3px] focus:ring-[#6C5CE7]/15 outline-none transition-all text-[14px] font-medium text-[#1B1D35] resize-none"
+                          className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px] font-medium text-[#1B1D35] resize-none"
                         />
                       </div>
 
@@ -218,7 +269,7 @@ export default function ProfilePage() {
                             type="text"
                             value={country}
                             onChange={(e) => setCountry(e.target.value)}
-                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px] font-medium text-[#1B1D35]"
+                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] outline-none text-[14px] font-medium text-[#1B1D35]"
                           />
                         </div>
                         <div>
@@ -227,7 +278,7 @@ export default function ProfilePage() {
                             type="text"
                             value={timezone}
                             onChange={(e) => setTimezone(e.target.value)}
-                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px] font-medium text-[#1B1D35]"
+                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] outline-none text-[14px] font-medium text-[#1B1D35]"
                           />
                         </div>
                         <div>
@@ -235,7 +286,7 @@ export default function ProfilePage() {
                           <select 
                             value={language}
                             onChange={(e) => setLanguage(e.target.value)}
-                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px] font-medium text-[#1B1D35]"
+                            className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] outline-none text-[14px] font-medium text-[#1B1D35]"
                           >
                             <option value="English">English</option>
                             <option value="Hindi">Hindi</option>
@@ -279,8 +330,9 @@ export default function ProfilePage() {
                               <GraduationCap className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-[12px] text-[#A0AEC0] font-bold uppercase tracking-wide">Academic Summary</p>
-                              <p className="text-[#1B1D35] font-medium text-[15px] mt-0.5 leading-relaxed">{profileData?.bio || bio}</p>
+                              <p className="text-[12px] text-[#A0AEC0] font-bold uppercase tracking-wide">Academic Identity</p>
+                              <p className="text-[#1B1D35] font-semibold text-[15px] mt-0.5">{academicLevel} ({stream})</p>
+                              <p className="text-[#4A5568] text-[13px]">{grade} • {institution}</p>
                             </div>
                           </div>
                           <div className="flex items-start gap-4">
@@ -288,8 +340,8 @@ export default function ProfilePage() {
                               <BookOpen className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-[12px] text-[#A0AEC0] font-bold uppercase tracking-wide">Language & Timezone</p>
-                              <p className="text-[#1B1D35] font-medium text-[15px] mt-0.5">{language} • {profileData?.timezone || timezone}</p>
+                              <p className="text-[12px] text-[#A0AEC0] font-bold uppercase tracking-wide">Bio & Learning Focus</p>
+                              <p className="text-[#1B1D35] font-medium text-[15px] mt-0.5 leading-relaxed">{profileData?.bio || bio}</p>
                             </div>
                           </div>
                           <div className="flex items-start gap-4">
@@ -308,25 +360,26 @@ export default function ProfilePage() {
 
                       {/* Location & Learning Stats */}
                       <div>
-                        <h3 className="text-[12px] font-bold text-[#A0AEC0] uppercase tracking-wider mb-5">Learning Progress</h3>
+                        <h3 className="text-[12px] font-bold text-[#A0AEC0] uppercase tracking-wider mb-5">Location & Cognitive DNA</h3>
                         <div className="space-y-5">
                           <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-2xl bg-[#F8F9FF] border border-[#E2E8F0] flex items-center justify-center shrink-0 text-[#6C5CE7]">
                               <Globe className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-[12px] text-[#A0AEC0] font-bold uppercase tracking-wide">Country</p>
-                              <p className="text-[#1B1D35] font-medium text-[15px] mt-0.5">{profileData?.country || country}</p>
+                              <p className="text-[12px] text-[#A0AEC0] font-bold uppercase tracking-wide">Location & Timezone</p>
+                              <p className="text-[#1B1D35] font-medium text-[15px] mt-0.5">{profileData?.country || country} ({profileData?.timezone || timezone})</p>
+                              <p className="text-[#4A5568] text-[13px]">Language: {language}</p>
                             </div>
                           </div>
                           <div className="flex items-start gap-4">
                             <div className="w-10 h-10 rounded-2xl bg-[#F8F9FF] border border-[#E2E8F0] flex items-center justify-center shrink-0 text-[#6C5CE7]">
-                              <Target className="w-5 h-5" />
+                              <BrainCircuit className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-[12px] text-[#A0AEC0] font-bold uppercase tracking-wide">Experience & Level</p>
+                              <p className="text-[12px] text-[#A0AEC0] font-bold uppercase tracking-wide">Cognitive Preferences</p>
                               <p className="text-[#1B1D35] font-medium text-[15px] mt-0.5">
-                                Level {achievements?.level || 1} ({achievements?.xp || 0} XP)
+                                Visual: {Math.round((dnaData?.visualPreference || 0.8) * 100)}% • Pace: {Math.round((dnaData?.pacePreference || 0.7) * 100)}%
                               </p>
                             </div>
                           </div>

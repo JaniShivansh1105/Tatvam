@@ -23,13 +23,7 @@ export default function PlansPage() {
 
   const createPlanMutation = useMutation({
     mutationFn: async (type: string) => {
-      const tasks = [
-        { title: "Review Kinematics & One-Dimensional Motion", lessonId: null },
-        { title: "Complete Newton's Laws Practice Set", lessonId: null },
-        { title: "Solve Vector Resolution Exercises", lessonId: null },
-        { title: "Take Kinematics Mastery Assessment", lessonId: null },
-      ];
-      await apiClient.post("/plans", { type, title: `${type.charAt(0).toUpperCase() + type.slice(1)} Adaptive Plan`, tasks });
+      await apiClient.post("/plans", { type });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plans"] });

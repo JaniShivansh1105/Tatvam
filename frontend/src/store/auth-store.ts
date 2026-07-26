@@ -45,7 +45,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setUser: (user: User) => {
-        set({ user });
+        const isCompleted = !!(user?.profile?.country || user?.learningDNA);
+        set({ user, hasCompletedOnboarding: isCompleted });
       },
 
       setHasCompletedOnboarding: (completed: boolean) => {
@@ -63,8 +64,8 @@ export const useAuthStore = create<AuthState>()(
             const { data } = await apiClient.get("/auth/me");
             const fetchedUser = data.data.user;
             
-            // Structured check using learningDNA relation and profile country column
-            const isCompleted = get().hasCompletedOnboarding || !!(fetchedUser?.learningDNA && fetchedUser?.profile?.country);
+            // Onboarding is completed if profile country is saved OR learningDNA exists
+            const isCompleted = !!(fetchedUser?.profile?.country || fetchedUser?.learningDNA);
 
             set({
               user: fetchedUser,

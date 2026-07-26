@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export function FlashcardReview() {
   const { flashcards, reviewFlashcard } = useEngineStore();
   const [isStudying, setIsStudying] = useState(false);
+  const [sessionQueue, setSessionQueue] = useState<Flashcard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
 
@@ -18,6 +19,7 @@ export function FlashcardReview() {
 
   const startStudy = () => {
     if (dueCards.length > 0) {
+      setSessionQueue(dueCards);
       setIsStudying(true);
       setCurrentIndex(0);
       setShowBack(false);
@@ -25,16 +27,17 @@ export function FlashcardReview() {
   };
 
   const handleReview = (difficulty: "again" | "hard" | "good" | "easy") => {
-    const currentCard = dueCards[currentIndex];
+    const currentCard = sessionQueue[currentIndex];
     if (currentCard) {
       reviewFlashcard(currentCard.id, difficulty);
     }
     
-    if (currentIndex < dueCards.length - 1) {
+    if (currentIndex < sessionQueue.length - 1) {
       setCurrentIndex(prev => prev + 1);
       setShowBack(false);
     } else {
       setIsStudying(false); // Session complete
+      setSessionQueue([]);
     }
   };
 
@@ -104,7 +107,7 @@ export function FlashcardReview() {
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-[#718096] uppercase tracking-wider">
-              Card {currentIndex + 1} of {dueCards.length}
+              Card {currentIndex + 1} of {sessionQueue.length}
             </span>
             <button 
               onClick={() => setIsStudying(false)}
@@ -127,14 +130,14 @@ export function FlashcardReview() {
               {/* Front */}
               <div className="absolute inset-0 backface-hidden bg-white border-2 border-[#E2E8F0] group-hover:border-[#6C5CE7]/50 rounded-[20px] p-6 shadow-sm flex flex-col items-center justify-center text-center">
                 <span className="absolute top-4 left-4 text-[10px] font-bold text-[#A0AEC0] uppercase tracking-wider">Front</span>
-                <p className="text-[16px] font-semibold text-[#1B1D35]">{dueCards[currentIndex]?.front}</p>
+                <p className="text-[16px] font-semibold text-[#1B1D35]">{sessionQueue[currentIndex]?.front}</p>
                 <span className="absolute bottom-4 text-[11px] font-medium text-[#CBD5E0]">Click to flip</span>
               </div>
 
               {/* Back */}
               <div className="absolute inset-0 backface-hidden bg-gradient-to-br from-[#1B1D35] to-[#2D3748] border-2 border-[#1B1D35] rounded-[20px] p-6 shadow-md flex flex-col items-center justify-center text-center rotate-y-180">
                 <span className="absolute top-4 left-4 text-[10px] font-bold text-[#A0AEC0] uppercase tracking-wider">Back</span>
-                <p className="text-[15px] font-medium text-white">{dueCards[currentIndex]?.back}</p>
+                <p className="text-[15px] font-medium text-white">{sessionQueue[currentIndex]?.back}</p>
               </div>
             </motion.div>
           </div>

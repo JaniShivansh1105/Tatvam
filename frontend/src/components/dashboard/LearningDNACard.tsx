@@ -1,10 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer } from "recharts";
+import React from "react";
+import dynamic from "next/dynamic";
 import { BrainCircuit, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+
+const RadarChart = dynamic(() => import("recharts").then(mod => mod.RadarChart), { ssr: false });
+const Radar = dynamic(() => import("recharts").then(mod => mod.Radar), { ssr: false });
+const PolarGrid = dynamic(() => import("recharts").then(mod => mod.PolarGrid), { ssr: false });
+const PolarAngleAxis = dynamic(() => import("recharts").then(mod => mod.PolarAngleAxis), { ssr: false });
+const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false });
 
 interface DNAData {
   visualPreference: number;
@@ -18,24 +25,15 @@ interface DNAData {
 }
 
 export function LearningDNACard() {
-  const [dna, setDna] = useState<DNAData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: dna, isLoading } = useQuery<DNAData>({
+    queryKey: ["dashboard", "dna"],
+    queryFn: async () => {
+      const res = await apiClient.get("/progress/dna");
+      return res.data.data.dna;
+    },
+  });
 
-  useEffect(() => {
-    const fetchDNA = async () => {
-      try {
-        const res = await apiClient.get("/progress/dna");
-        setDna(res.data.data.dna);
-      } catch (error) {
-        console.error("Failed to fetch DNA", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDNA();
-  }, []);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="bg-white rounded-3xl p-8 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
         <Loader2 className="w-8 h-8 text-[#6C5CE7] animate-spin" />
