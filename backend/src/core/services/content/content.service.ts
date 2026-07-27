@@ -1,5 +1,6 @@
 import { prisma } from "../../../data/prisma.js";
 import { NotFoundError } from "../../../utils/errors.js";
+import { AIService } from "../ai/ai.service.js";
 
 export class ContentService {
   static async getLessonBySlug(slug: string) {
@@ -111,14 +112,20 @@ export class ContentService {
       estimatedLessonMinutes = Math.max(10, sectionCount * 5);
     }
 
-    let aiInsight = { message: "Ready to learn something new today?", type: "encouragement" };
-    if (todayMinutes >= dailyGoalMinutes) {
-      aiInsight = { message: "Daily goal reached! Awesome work today.", type: "celebration" };
-    } else if (user.profile?.streak && user.profile.streak >= 3) {
-      aiInsight = { message: `You're on a ${user.profile.streak}-day streak. Don't break it!`, type: "motivation" };
-    } else if (completedLessons > 0) {
-      aiInsight = { message: `You've mastered ${completedLessons} lessons. Keep building that foundation.`, type: "encouragement" };
-    }
+    const stats = {
+      learningTime,
+      completedLessons,
+      accuracy,
+      currentStreak: user.profile?.streak || 0,
+    };
+
+    const aiRecommendations = await AIService.generateDashboardRecommendations(userId, stats, nextLesson).catch(() => ({
+      aiInsight: { message: "Ready to learn something new today?", type: "encouragement" },
+      weakConcepts: [],
+      recommendedTopics: []
+    }));
+
+    const aiInsight = aiRecommendations.aiInsight;
 
     const quickActions = [];
     if (nextLesson) {
@@ -131,6 +138,18 @@ export class ContentService {
         theme: { bg: "bg-[#6C5CE7]", text: "text-white", hoverBorder: "hover:border-[#8B7CF6]" }
       });
     }
+
+    if (aiRecommendations.weakConcepts && aiRecommendations.weakConcepts.length > 0) {
+      quickActions.push({
+        title: "Target Weakness",
+        description: `Review: ${aiRecommendations.weakConcepts[0]}`,
+        iconType: "brain",
+        href: "/dashboard/practice",
+        isPrimary: false,
+        theme: { bg: "bg-[#FFF5F5]", text: "text-[#E53E3E]", hoverBorder: "hover:border-[#FEB2B2]" }
+      });
+    }
+
     quickActions.push({
       title: "Practice Tests",
       description: "Test your knowledge",
@@ -162,12 +181,7 @@ export class ContentService {
         progress: 0,
         estimatedMinutes: estimatedLessonMinutes,
       } : null,
-      stats: {
-        learningTime,
-        completedLessons,
-        accuracy,
-        currentStreak: user.profile?.streak || 0,
-      },
+      stats,
       goal,
       aiInsight,
       roadmap: roadmapData,

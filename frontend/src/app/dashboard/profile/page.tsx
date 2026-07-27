@@ -24,8 +24,9 @@ export default function ProfilePage() {
   const profileData = (user as any)?.profile;
   const dnaData = (user as any)?.learningDNA;
 
-  // Keystroke live avatar preview & individual profile field states
-  const [previewName, setPreviewName] = useState(user?.fullName || "");
+  // Separate React states for the name editing
+  const [draftName, setDraftName] = useState(user?.fullName || "");
+  const [savedName, setSavedName] = useState(user?.fullName || "");
   const [bio, setBio] = useState(profileData?.bio || "Physics enthusiast preparing for competitive exams.");
   const [country, setCountry] = useState(profileData?.country || "India");
   const [timezone, setTimezone] = useState(profileData?.timezone || "Asia/Kolkata (IST)");
@@ -40,7 +41,8 @@ export default function ProfilePage() {
   // Synchronize when user state changes externally
   useEffect(() => {
     if (user?.fullName) {
-      setPreviewName(user.fullName);
+      setDraftName(user.fullName);
+      setSavedName(user.fullName);
     }
   }, [user?.fullName]);
 
@@ -82,14 +84,16 @@ export default function ProfilePage() {
     onError: (_err: any, _newPayload, context) => {
       if (context?.previousUser) {
         setUser(context.previousUser);
-        setPreviewName(context.previousUser.fullName);
+        setDraftName(context.previousUser.fullName);
+        setSavedName(context.previousUser.fullName);
       }
       setErrorMessage("Failed to update profile. Changes have been rolled back.");
     },
   });
 
   const handleCancel = () => {
-    setPreviewName(user?.fullName || "");
+    setDraftName(user?.fullName || "");
+    setSavedName(user?.fullName || "");
     setBio(profileData?.bio || "Physics enthusiast preparing for competitive exams.");
     setCountry(profileData?.country || "India");
     setTimezone(profileData?.timezone || "Asia/Kolkata (IST)");
@@ -99,7 +103,8 @@ export default function ProfilePage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfileMutation.mutate({ fullName: previewName, bio, country, timezone });
+    setSavedName(draftName);
+    updateProfileMutation.mutate({ fullName: draftName, bio, country, timezone });
   };
 
   return (
@@ -158,7 +163,7 @@ export default function ProfilePage() {
                 <div className="absolute -top-16 left-6 md:left-10 z-10">
                   <div className="p-1.5 bg-white rounded-full shadow-xl">
                     <UserAvatar 
-                      name={previewName} 
+                      name={savedName} 
                       email={user?.email} 
                       userId={user?.id} 
                       size="2xl"
@@ -170,7 +175,7 @@ export default function ProfilePage() {
                 <div className="pt-16 md:pt-16 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-6">
                   <div>
                     <div className="flex items-center gap-3 flex-wrap">
-                      <h2 className="text-[26px] font-extrabold text-[#1B1D35] tracking-tight">{previewName || "Student User"}</h2>
+                      <h2 className="text-[26px] font-extrabold text-[#1B1D35] tracking-tight">{savedName || "Student User"}</h2>
                       <span className="px-3 py-1 bg-[#F0E6FF] text-[#6C5CE7] rounded-full text-[12px] font-bold uppercase tracking-wider flex items-center gap-1">
                         <Award className="w-3.5 h-3.5" /> Level {achievements?.level || 1} Student
                       </span>
@@ -194,18 +199,18 @@ export default function ProfilePage() {
                     >
                       <div>
                         <label className="block text-[12px] font-bold text-[#4A5568] uppercase tracking-wider mb-2">
-                          Display Name (Live Avatar Preview)
+                          Display Name
                         </label>
                         <input 
                           type="text"
-                          value={previewName}
-                          onChange={(e) => setPreviewName(e.target.value)}
+                          value={draftName}
+                          onChange={(e) => setDraftName(e.target.value)}
                           placeholder="Enter your name..."
                           className="w-full px-4 py-3 rounded-2xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] focus:ring-[3px] focus:ring-[#6C5CE7]/15 outline-none transition-all text-[14px] font-medium text-[#1B1D35]"
                           required
                         />
-                        <p className="text-[12px] text-[#6C5CE7] font-semibold mt-1.5">
-                          Notice your SVG avatar preview updates live on every keystroke!
+                        <p className="text-[12px] text-[#A0AEC0] font-semibold mt-1.5">
+                          Your avatar will update once you click Save Changes.
                         </p>
                       </div>
 

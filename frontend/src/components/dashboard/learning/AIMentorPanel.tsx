@@ -104,7 +104,7 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
     setMessages(prev => [...prev, { role: "ai", text: "", isStreaming: true }]);
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/ai/mentor/chat`, {
+      let response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/ai/mentor/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,8 +121,37 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
         })
       });
 
+      if (response.status === 401) {
+        // Token might be expired, trigger apiClient to auto-refresh it
+        try {
+          const { apiClient } = await import("@/lib/api-client");
+          await apiClient.get("/auth/me"); // Triggers interceptor and refresh
+          
+          // Retry the request with the new token
+          response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/ai/mentor/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${useAuthStore.getState().accessToken || ''}`,
+            },
+            body: JSON.stringify({
+              messages: newMessages,
+              context: {
+                strategy,
+                lessonId: currentLessonId || undefined,
+                lessonTitle: "Current Lesson",
+                learningState: dna
+              }
+            })
+          });
+        } catch (refreshErr) {
+          throw new Error("Authentication failed. Please log in again.");
+        }
+      }
+
       if (!response.ok || !response.body) {
-        throw new Error("Network response was not ok");
+        const errorText = await response.text().catch(() => "No error text available");
+        throw new Error(`Network response was not ok: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const reader = response.body.getReader();

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../../../data/prisma.js";
 import { AIService } from "../../../core/services/ai/ai.service.js";
+import { AIUnavailableError } from "../../../core/services/ai/ai.types.js";
 
 export class PlansController {
   static async getPlans(req: Request, res: Response) {
@@ -49,6 +50,9 @@ export class PlansController {
       });
       res.json({ success: true, data: plan });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(503).json({ success: false, error: "AI services are currently unavailable." });
+      }
       res.status(500).json({ success: false, error: "Failed to create plan" });
     }
   }
