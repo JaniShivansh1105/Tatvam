@@ -40,7 +40,7 @@ const safeUserSelect = {
 };
 
 export class AuthService {
-  static async register(data: RegisterData, sessionInfo: SessionInfo) {
+  async register(data: RegisterData, sessionInfo: SessionInfo) {
     const { email, password, fullName, username } = data;
 
     // 1. Perform reads outside the transaction
@@ -121,7 +121,7 @@ export class AuthService {
     };
   }
 
-  static async login(data: LoginData, sessionInfo: SessionInfo) {
+  async login(data: LoginData, sessionInfo: SessionInfo) {
     const { email, password } = data;
 
     const user = await prisma.user.findUnique({
@@ -175,7 +175,7 @@ export class AuthService {
     };
   }
 
-  static async refresh(userId: string, incomingRefreshToken: string, sessionInfo: SessionInfo) {
+  async refresh(userId: string, incomingRefreshToken: string, sessionInfo: SessionInfo) {
     const activeSessions = await prisma.session.findMany({
       where: {
         userId,
@@ -223,7 +223,7 @@ export class AuthService {
     };
   }
 
-  static async logout(userId: string, incomingRefreshToken: string) {
+  async logout(userId: string, incomingRefreshToken: string): Promise<void> {
     const activeSessions = await prisma.session.findMany({
       where: {
         userId,
@@ -251,7 +251,7 @@ export class AuthService {
     return true;
   }
 
-  static async getMe(userId: string) {
+  async getMe(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -273,7 +273,7 @@ export class AuthService {
     return user;
   }
 
-  static async updatePreferences(userId: string, data: { preferredLanguageName?: string; notificationsEnabled?: boolean; theme?: string }) {
+  async updatePreferences(userId: string, data: { preferredLanguageName?: string; notificationsEnabled?: boolean; theme?: string }) {
     const updateData: any = {};
     if (data.notificationsEnabled !== undefined) {
       updateData.notificationsEnabled = data.notificationsEnabled;
@@ -315,7 +315,7 @@ export class AuthService {
 
   // ─── Forgot Password Flow ───────────────────────────────────────────────
 
-  static async forgotPassword(email: string) {
+  async forgotPassword(email: string) {
     // 1. Verify email exists
     const user = await prisma.user.findUnique({
       where: { email },
@@ -348,7 +348,7 @@ export class AuthService {
     return true;
   }
 
-  static async verifyOTP(email: string, otp: string) {
+  async verifyOTP(email: string, otp: string) {
     const stored = otpStore.get(email);
     
     if (!stored) {
@@ -386,7 +386,7 @@ export class AuthService {
     return { resetToken };
   }
 
-  static async resetPassword(token: string, newPassword: string) {
+  async resetPassword(token: string, newPassword: string) {
     const secret = process.env.JWT_SECRET || "default_fallback_secret_tatvam";
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const jwt = require("jsonwebtoken");
@@ -430,7 +430,7 @@ export class AuthService {
     return true;
   }
 
-  static async updateProfile(userId: string, data: { fullName?: string; bio?: string; country?: string; timezone?: string; dna?: any }) {
+  async updateProfile(userId: string, data: { fullName?: string; bio?: string; country?: string; timezone?: string; dna?: any }) {
     const { fullName, bio, country, timezone, dna } = data;
     
     if (fullName) {
@@ -479,7 +479,7 @@ export class AuthService {
       });
     }
 
-    return AuthService.getMe(userId);
+    return this.getMe(userId);
   }
 }
 

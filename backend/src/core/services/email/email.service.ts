@@ -1,6 +1,11 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { Resend } from "resend";
 
-export class EmailService {
+export class EmailService  {
+  constructor(private readonly eventBus: IEventBus) {}
   private static resend: Resend | null = null;
   private static isDev = process.env.NODE_ENV !== "production";
 
@@ -14,8 +19,8 @@ export class EmailService {
     return this.resend;
   }
 
-  static async sendOTP(email: string, otp: string) {
-    const client = this.getClient();
+  async sendOTP(email: string, otp: string) {
+    const client = EmailService.getClient();
 
     if (!client) {
       // Fallback to Development Mode (console logging)
@@ -47,7 +52,7 @@ export class EmailService {
     } catch (error) {
       console.error("[EMAIL ERROR] Failed to send OTP via Resend:", error);
       // Fallback to console in dev if Resend fails
-      if (this.isDev) {
+      if (EmailService.isDev) {
         console.log(`[EMAIL DEV FALLBACK] OTP: ${otp}`);
         return true;
       }

@@ -1,9 +1,14 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { prisma } from "../../../data/prisma.js";
 import { NotFoundError, ForbiddenError } from "../../../utils/errors.js";
 
-export class WorkspaceService {
+export class WorkspaceService implements IWorkspaceService {
+  constructor(private readonly workspaceRepo: IWorkspaceRepository, private readonly progressRepo: IProgressRepository, private readonly eventBus: IEventBus) {}
   // ─── Bookmarks (Lesson-Scoped) ─────────────────────────────────────────
-  static async getBookmarks(userId: string, lessonId: string, query?: { search?: string; folder?: string; pinned?: boolean; favorite?: boolean }) {
+  async getBookmarks(userId: string, lessonId: string, query?: { search?: string; folder?: string; pinned?: boolean; favorite?: boolean }) {
     return prisma.bookmark.findMany({
       where: {
         userId,
@@ -23,7 +28,7 @@ export class WorkspaceService {
     });
   }
 
-  static async addBookmark(
+  async addBookmark(
     userId: string,
     lessonId: string,
     data: { type: string; content: string; sectionId?: string; note?: string; folder?: string; tags?: string[]; color?: string }
@@ -47,7 +52,7 @@ export class WorkspaceService {
     return bookmark;
   }
 
-  static async updateBookmark(userId: string, id: string, data: { note?: string; isPinned?: boolean; isFavorite?: boolean; folder?: string; tags?: string[]; color?: string }) {
+  async updateBookmark(userId: string, id: string, data: { note?: string; isPinned?: boolean; isFavorite?: boolean; folder?: string; tags?: string[]; color?: string }) {
     const bookmark = await prisma.bookmark.findUnique({ where: { id } });
     if (!bookmark) throw new NotFoundError("Bookmark not found");
     if (bookmark.userId !== userId) throw new ForbiddenError("Unauthorized");
@@ -55,7 +60,7 @@ export class WorkspaceService {
     return prisma.bookmark.update({ where: { id }, data });
   }
 
-  static async removeBookmark(userId: string, id: string) {
+  async removeBookmark(userId: string, id: string) {
     const bookmark = await prisma.bookmark.findUnique({ where: { id } });
     if (!bookmark) throw new NotFoundError("Bookmark not found");
     if (bookmark.userId !== userId) throw new ForbiddenError("Unauthorized");
@@ -66,7 +71,7 @@ export class WorkspaceService {
     });
   }
 
-  static async restoreBookmark(userId: string, id: string) {
+  async restoreBookmark(userId: string, id: string) {
     const bookmark = await prisma.bookmark.findUnique({ where: { id } });
     if (!bookmark) throw new NotFoundError("Bookmark not found");
     if (bookmark.userId !== userId) throw new ForbiddenError("Unauthorized");
@@ -78,7 +83,7 @@ export class WorkspaceService {
   }
 
   // ─── Smart Notes (Lesson-Scoped) ──────────────────────────────────────
-  static async getNotes(userId: string, lessonId: string, query?: { search?: string; folder?: string }) {
+  async getNotes(userId: string, lessonId: string, query?: { search?: string; folder?: string }) {
     return prisma.smartNote.findMany({
       where: {
         userId,
@@ -96,7 +101,7 @@ export class WorkspaceService {
     });
   }
 
-  static async addNote(
+  async addNote(
     userId: string,
     lessonId: string,
     data: { text: string; title?: string; summary?: string; tags?: string[]; folder?: string; isDraft?: boolean }
@@ -121,7 +126,7 @@ export class WorkspaceService {
     return note;
   }
 
-  static async updateNote(
+  async updateNote(
     userId: string,
     id: string,
     data: { text?: string; title?: string; summary?: string; tags?: string[]; folder?: string; isDraft?: boolean }
@@ -136,7 +141,7 @@ export class WorkspaceService {
     });
   }
 
-  static async removeNote(userId: string, id: string) {
+  async removeNote(userId: string, id: string) {
     const note = await prisma.smartNote.findUnique({ where: { id } });
     if (!note) throw new NotFoundError("Note not found");
     if (note.userId !== userId) throw new ForbiddenError("Unauthorized");
@@ -148,14 +153,14 @@ export class WorkspaceService {
   }
 
   // ─── Flashcards (Lesson-Scoped) ───────────────────────────────────────
-  static async getFlashcards(userId: string, lessonId: string) {
+  async getFlashcards(userId: string, lessonId: string) {
     return prisma.flashcard.findMany({
       where: { userId, lessonId, deletedAt: null },
       orderBy: { nextReviewAt: "asc" },
     });
   }
 
-  static async generateFlashcard(
+  async generateFlashcard(
     userId: string,
     lessonId: string,
     data: { front: string; back: string; sourceNoteId?: string; sourceBookmarkId?: string; deck?: string; tags?: string[] }
@@ -182,7 +187,7 @@ export class WorkspaceService {
     return flashcard;
   }
 
-  static async reviewFlashcard(userId: string, id: string, data: { difficulty: "again" | "hard" | "good" | "easy" }) {
+  async reviewFlashcard(userId: string, id: string, data: { difficulty: "again" | "hard" | "good" | "easy" }) {
     const flashcard = await prisma.flashcard.findUnique({ where: { id } });
     if (!flashcard) throw new NotFoundError("Flashcard not found");
     if (flashcard.userId !== userId) throw new ForbiddenError("Unauthorized");

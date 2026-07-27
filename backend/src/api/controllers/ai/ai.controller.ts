@@ -1,8 +1,10 @@
+import { chatStreamUseCase, getHistoryUseCase } from "../../../di/container.js";
 import { Request, Response } from "express";
-import { AIService } from "../../../core/services/ai/ai.service.js";
+import { ChatStreamUseCase, GetHistoryUseCase } from "../../../application/ai/ai.use-cases.js";
 
 export class AIController {
-  static async chat(req: Request, res: Response) {
+  constructor() {}
+  async chat(req: Request, res: Response) {
     const userId = req.user!.userId;
     const { messages, context, provider = "gemini" } = req.body;
 
@@ -12,7 +14,7 @@ export class AIController {
     res.setHeader("Connection", "keep-alive");
 
     try {
-      const stream = await AIService.chatStream(userId, messages, context, provider);
+      const stream = await chatStreamUseCase.execute(userId, messages, context, provider);
 
       for await (const chunk of stream) {
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
@@ -27,11 +29,11 @@ export class AIController {
     }
   }
 
-  static async getHistory(req: Request, res: Response) {
+  async getHistory(req: Request, res: Response) {
     const userId = req.user!.userId;
     const { lessonId } = req.query;
     try {
-      const history = await AIService.getHistory(userId, lessonId as string | undefined);
+      const history = await getHistoryUseCase.execute(userId, lessonId as string | undefined);
       res.json({ success: true, data: history });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to fetch history" });

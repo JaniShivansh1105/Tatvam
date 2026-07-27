@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { PracticeController } from "../controllers/practice/practice.controller.js";
+import { practiceController } from "../../di/container.js";
 import { requireAuth } from "../middleware/require-auth.js";
 
 const router = Router();
 
-router.get("/", requireAuth, PracticeController.getPracticeSets);
-router.post("/generate", requireAuth, PracticeController.generateSet);
-router.post("/question/:questionId/submit", requireAuth, PracticeController.submitAnswer);
-router.post("/set/:setId/complete", requireAuth, PracticeController.completeSet);
+router.get("/", requireAuth, practiceController.getPracticeSets);
+router.post("/generate", requireAuth, practiceController.generateSet);
+router.post("/question/:questionId/submit", requireAuth, practiceController.submitAnswer);
+router.post("/set/:setId/complete", requireAuth, practiceController.completeSet);
 
 export const practiceRouter = router;

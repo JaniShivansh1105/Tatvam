@@ -57,6 +57,11 @@ model User {
   practiceSets  PracticeSet[]
   userBadges    UserBadge[]
 
+  knowledgeCollections KnowledgeCollection[]
+  educationalArtifacts EducationalArtifact[]
+  interactions         LearningInteraction[]
+  recommendations      Recommendation[]
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -327,6 +332,11 @@ model LearningDNA {
   averageConfidence      Float @default(0.0)
   averageAttempts        Float @default(0.0)
 
+  // New Adaptive Fields
+  velocity               Float @default(1.0)
+  consistency            Float @default(1.0)
+  streak                 Int   @default(0)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
@@ -341,13 +351,20 @@ model ConceptMastery {
   lessonId  String @db.Uuid
   conceptId String
 
-  confidence    Float @default(0.0)
-  struggleCount Int   @default(0)
+  confidence       Float @default(0.0)
+  struggleCount    Int   @default(0)
+  
+  // New Adaptive Fields
+  retention        Float @default(1.0)
+  difficulty       Float @default(0.5)
+  revisionPriority Float @default(0.0)
+  weakTopicStatus  Boolean @default(false)
+  reviewHistory    Json? // Array of { date, confidence, wasCorrect }
 
-  forgettingCurve Float     @default(1.0)
-  trend           String    @default("STABLE")
-  lastReviewedAt  DateTime?
-  nextReviewAt    DateTime?
+  forgettingCurve  Float     @default(1.0)
+  trend            String    @default("STABLE")
+  lastReviewedAt   DateTime?
+  nextReviewAt     DateTime?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
@@ -398,7 +415,9 @@ model ChatSession {
   userId    String   @db.Uuid
   lessonId  String?  @db.Uuid
   title     String?
-  status    String   @default("active")
+  status    String   @default("active") // active, archived, deleted
+  isPinned  Boolean  @default(false)
+  metadata  Json?
   
   messages  ChatMessage[]
   
@@ -414,9 +433,14 @@ model ChatSession {
 model ChatMessage {
   id            String      @id @default(uuid()) @db.Uuid
   chatSessionId String      @db.Uuid
-  role          String      // "user" or "assistant"
+  role          String      // "user" or "assistant" or "system"
   content       String      @db.Text
   contextText   String?     @db.Text
+  
+  tokensUsed    Int?
+  durationMs    Int?
+  metadata      Json?
+  version       Int         @default(1)
   
   session       ChatSession @relation(fields: [chatSessionId], references: [id], onDelete: Cascade)
 
@@ -530,4 +554,154 @@ model UserBadge {
 
   @@unique([userId, badgeId])
   @@map("user_badges")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Knowledge Domain & Retrieval Augmented Generation (RAG) Infrastructure
+// ─────────────────────────────────────────────────────────────────────────────
+
+model KnowledgeCollection {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?  @db.Text
+  isPublic    Boolean  @default(false)
+  
+  ownerId     String   @db.Uuid
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  documents   KnowledgeDocument[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("knowledge_collections")
+}
+
+model KnowledgeDocument {
+  id           String   @id @default(uuid()) @db.Uuid
+  collectionId String   @db.Uuid
+  title        String
+  sourceType   String   // pdf, web, text, video
+  sourceUri    String?  @db.Text
+  status       String   @default("pending") // pending, processing, indexed, failed
+  
+  metadata     Json?
+  permissions  Json?    // AC rules, role-based visibility
+  tags         String[]
+  
+  collection   KnowledgeCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  versions     DocumentVersion[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("knowledge_documents")
+}
+
+model DocumentVersion {
+  id          String   @id @default(uuid()) @db.Uuid
+  documentId  String   @db.Uuid
+  versionHash String   // To track changes/deduplication
+  byteSize    Int?
+  
+  chunks      DocumentChunk[]
+  
+  document    KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@map("document_versions")
+}
+
+model DocumentChunk {
+  id           String   @id @default(uuid()) @db.Uuid
+  versionId    String   @db.Uuid
+  content      String   @db.Text
+  chunkType    String   // Concept, Definition, Formula, Example, Exercise, Paragraph
+  
+  // Vector embeddings will be handled by vector stores (pgvector, pinecone, etc.),
+  // but if we use pgvector in prisma, we'd add `embedding Unsupported("vector(768)")?`
+  // Since the user asked for abstraction, we keep it separate or decoupled.
+  metadata     Json?
+  
+  tokenCount   Int?
+  
+  version      DocumentVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime @default(now())
+
+  @@map("document_chunks")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Educational Artifacts & Study Tools Engine
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EducationalArtifact {
+  id                  String   @id @default(uuid()) @db.Uuid
+  artifactType        String   // FLASHCARD, QUIZ, SMART_NOTES, REVISION_SHEET, etc.
+  title               String
+  description         String?  @db.Text
+  
+  content             Json     // Structured content based on artifact type
+  
+  sourceConversationId String? @db.Uuid
+  sourceKnowledgeIds  String[] // Array of document or chunk IDs
+  
+  version             Int      @default(1)
+  language            String   @default("en")
+  tags                String[]
+  educationalMetadata Json?    // Difficulty, Weak Concept links, Revision Priority
+  
+  ownerId             String   @db.Uuid
+  owner               User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("educational_artifacts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Adaptive Learning & Mastery Engine
+// ─────────────────────────────────────────────────────────────────────────────
+
+model LearningInteraction {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  actionType      String   // FLASHCARD_VIEWED, FLASHCARD_ANSWERED, QUIZ_STARTED, etc.
+  targetId        String?  @db.Uuid
+  targetType      String?  // EducationalArtifact, Lesson, etc.
+  
+  isCorrect       Boolean?
+  timeSpentMs     Int?
+  confidenceScore Float?
+  
+  metadata        Json?
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+
+  @@map("learning_interactions")
+}
+
+model Recommendation {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  title           String
+  description     String   @db.Text
+  actionType      String   // e.g., REVIEW_CHAPTER, PRACTICE_WEAK_CONCEPT
+  targetId        String?  @db.Uuid
+  
+  priority        Float    @default(0)
+  reasoning       String?  @db.Text
+  status          String   @default("PENDING") // PENDING, ACCEPTED, DISMISSED
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("recommendations")
 }

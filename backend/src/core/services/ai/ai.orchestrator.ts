@@ -1,3 +1,7 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { AIContextBuilder } from "./ai.context-builder.js";
 
 import { AIUnavailableError } from "./ai.types.js";
@@ -10,8 +14,9 @@ import * as PracticePrompts from "./prompts/practice/v1/index.js";
 import * as RecommendationPrompts from "./prompts/recommendation/v1/index.js";
 import { StudyPlanSchema, PracticeSetSchema, RecommendationSchema } from "./schemas/ai.schemas.js";
 
-export class AIOrchestrator {
-  static async execute(feature: keyof typeof AI_FEATURES, userId: string, params: any) {
+export class AIOrchestrator implements IAIOrchestrator {
+  constructor(private readonly eventBus: IEventBus) {}
+  async execute(feature: keyof typeof AI_FEATURES, userId: string, params: any) {
     const requestId = AILogger.generateRequestId();
     const startTime = Date.now();
     let fallbackTriggered = false;

@@ -1,8 +1,13 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { prisma } from "../../../data/prisma.js";
 
-export class ProgressService {
+export class ProgressService implements IProgressService {
+  constructor(private readonly progressRepo: IProgressRepository, private readonly eventBus: IEventBus) {}
   // ─── DNA (Global to user) ────────────────────────────────────────────
-  static async getDNA(userId: string) {
+  async getDNA(userId: string) {
     let dna = await prisma.learningDNA.findUnique({ where: { userId } });
     if (!dna) {
       dna = await prisma.learningDNA.create({ data: { userId } });
@@ -17,11 +22,11 @@ export class ProgressService {
     const activityCount = await prisma.activity.count({ where: { userId } });
 
     const avgMasteryConfidence = masteries.length > 0
-      ? masteries.reduce((sum, m) => sum + m.confidence, 0) / masteries.length
+      ? masteries.reduce((sum: number, m: any) => sum + m.confidence, 0) / masteries.length
       : dna.averageConfidence;
 
     const avgQuizScore = practiceSets.length > 0
-      ? practiceSets.reduce((sum, p) => sum + (p.score || 0), 0) / practiceSets.length / 100
+      ? practiceSets.reduce((sum: number, p: any) => sum + (p.score || 0), 0) / practiceSets.length / 100
       : dna.quizAccuracy;
 
     // Evolve preferences smoothly
@@ -46,7 +51,7 @@ export class ProgressService {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static async updateDNA(userId: string, data: Partial<any>) {
+  async updateDNA(userId: string, data: Partial<any>) {
     const existing = await this.getDNA(userId);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     const { id: _id, userId: _userId, createdAt: _createdAt, updatedAt: _updatedAt, ...merged } = { ...existing, ...data } as any;
@@ -60,7 +65,7 @@ export class ProgressService {
 
   // ─── Activity Timeline (Lesson-Scoped) ────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  static async logActivity(userId: string, type: string, lessonId?: string, details?: any) {
+  async logActivity(userId: string, type: string, lessonId?: string, details?: any) {
     return prisma.activity.create({
       data: {
         userId,
@@ -71,7 +76,7 @@ export class ProgressService {
     });
   }
 
-  static async getTimeline(userId: string, lessonId?: string) {
+  async getTimeline(userId: string, lessonId?: string) {
     return prisma.activity.findMany({
       where: {
         userId,
@@ -83,13 +88,13 @@ export class ProgressService {
   }
 
   // ─── Mastery (Lesson-Scoped) ──────────────────────────────────────────
-  static async getMastery(userId: string, lessonId: string) {
+  async getMastery(userId: string, lessonId: string) {
     return prisma.conceptMastery.findMany({
       where: { userId, lessonId },
     });
   }
 
-  static async recordInteraction(userId: string, lessonId: string, conceptId: string, type: "mastered" | "confused" | "analogy" | "challenge") {
+  async recordInteraction(userId: string, lessonId: string, conceptId: string, type: "mastered" | "confused" | "analogy" | "challenge") {
     const existing = await prisma.conceptMastery.findUnique({
       where: { userId_lessonId_conceptId: { userId, lessonId, conceptId } },
     });

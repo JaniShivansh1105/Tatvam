@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ContentController } from "../controllers/content/content.controller.js";
+import { contentController } from "../../di/container.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 
@@ -7,9 +7,9 @@ const contentRouter = Router();
 
 contentRouter.use(requireAuth);
 
-contentRouter.get("/lessons/:slug", asyncHandler(ContentController.getLessonBySlug));
-contentRouter.get("/dashboard", asyncHandler(ContentController.getDashboardContent));
-contentRouter.get("/roadmap", asyncHandler(ContentController.getRoadmap));
-contentRouter.get("/achievements", asyncHandler(ContentController.getAchievements));
+contentRouter.get("/lessons/:slug", asyncHandler(contentController.getLessonBySlug.bind(contentController)));
+contentRouter.get("/dashboard", asyncHandler(contentController.getDashboardContent.bind(contentController)));
+contentRouter.get("/roadmap", asyncHandler(contentController.getRoadmap.bind(contentController)));
+contentRouter.get("/achievements", asyncHandler(contentController.getAchievements.bind(contentController)));
 
 export { contentRouter };

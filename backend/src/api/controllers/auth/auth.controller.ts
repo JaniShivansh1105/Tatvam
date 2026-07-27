@@ -1,5 +1,6 @@
+import { registerUseCase, loginUseCase, refreshUseCase, logoutUseCase, getMeUseCase, updatePreferencesUseCase, updateProfileUseCase, forgotPasswordUseCase, verifyOTPUseCase, resetPasswordUseCase } from "../../../di/container.js";
 import { Request, Response } from "express";
-import { AuthService } from "../../../core/services/auth/auth.service.js";
+import { RegisterUseCase, LoginUseCase, RefreshUseCase, LogoutUseCase, GetMeUseCase, UpdatePreferencesUseCase, UpdateProfileUseCase, ForgotPasswordUseCase, VerifyOTPUseCase, ResetPasswordUseCase } from "../../../application/auth/auth.use-cases.js";
 import { sendSuccess } from "../../../utils/api-response.js";
 import {
   getRefreshTokenCookieOptions,
@@ -9,13 +10,14 @@ import { verifyRefreshToken } from "../../../utils/jwt.js";
 import { UnauthorizedError } from "../../../utils/errors.js";
 
 export class AuthController {
-  static async register(req: Request, res: Response) {
+  constructor() {}
+  async register(req: Request, res: Response) {
     const sessionInfo = {
       userAgent: req.headers["user-agent"],
       ipAddress: req.ip,
     };
 
-    const { user, accessToken, refreshTokenString } = await AuthService.register(
+    const { user, accessToken, refreshTokenString } = await registerUseCase.execute(
       req.body,
       sessionInfo
     );
@@ -29,13 +31,13 @@ export class AuthController {
     });
   }
 
-  static async login(req: Request, res: Response) {
+  async login(req: Request, res: Response) {
     const sessionInfo = {
       userAgent: req.headers["user-agent"],
       ipAddress: req.ip,
     };
 
-    const { user, accessToken, refreshTokenString } = await AuthService.login(
+    const { user, accessToken, refreshTokenString } = await loginUseCase.execute(
       req.body,
       sessionInfo
     );
@@ -48,7 +50,7 @@ export class AuthController {
     });
   }
 
-  static async refresh(req: Request, res: Response) {
+  async refresh(req: Request, res: Response) {
     const incomingRefreshToken = req.cookies.refreshToken;
     if (!incomingRefreshToken) {
       throw new UnauthorizedError("Refresh token missing");
@@ -62,7 +64,7 @@ export class AuthController {
       ipAddress: req.ip,
     };
 
-    const { accessToken, refreshTokenString } = await AuthService.refresh(
+    const { accessToken, refreshTokenString } = await refreshUseCase.execute(
       payload.userId,
       incomingRefreshToken,
       sessionInfo
@@ -76,14 +78,14 @@ export class AuthController {
     });
   }
 
-  static async logout(req: Request, res: Response) {
+  async logout(req: Request, res: Response) {
     const incomingRefreshToken = req.cookies.refreshToken;
     
     // Only attempt to revoke if there is a token to begin with
     if (incomingRefreshToken) {
       try {
         const payload = verifyRefreshToken(incomingRefreshToken);
-        await AuthService.logout(payload.userId, incomingRefreshToken);
+        await logoutUseCase.execute(payload.userId, incomingRefreshToken);
       } catch {
         // If the token is invalid/expired during logout, just swallow the error
         // since our ultimate goal is to clear the cookie and sign out anyway.
@@ -98,9 +100,9 @@ export class AuthController {
     });
   }
 
-  static async getMe(req: Request, res: Response) {
+  async getMe(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const user = await AuthService.getMe(userId);
+    const user = await getMeUseCase.execute(userId);
 
     return sendSuccess({
       res,
@@ -108,9 +110,9 @@ export class AuthController {
     });
   }
 
-  static async updatePreferences(req: Request, res: Response) {
+  async updatePreferences(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const preference = await AuthService.updatePreferences(userId, req.body);
+    const preference = await updatePreferencesUseCase.execute(userId, req.body);
     
     return sendSuccess({
       res,
@@ -118,9 +120,9 @@ export class AuthController {
     });
   }
 
-  static async updateProfile(req: Request, res: Response) {
+  async updateProfile(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const user = await AuthService.updateProfile(userId, req.body);
+    const user = await updateProfileUseCase.execute(userId, req.body);
     
     return sendSuccess({
       res,
@@ -130,9 +132,9 @@ export class AuthController {
 
   // ─── Forgot Password Flow ───────────────────────────────────────────────
 
-  static async forgotPassword(req: Request, res: Response) {
+  async forgotPassword(req: Request, res: Response) {
     const { email } = req.body;
-    await AuthService.forgotPassword(email);
+    await forgotPasswordUseCase.execute(email);
     
     return sendSuccess({
       res,
@@ -140,9 +142,9 @@ export class AuthController {
     });
   }
 
-  static async verifyOTP(req: Request, res: Response) {
+  async verifyOTP(req: Request, res: Response) {
     const { email, otp } = req.body;
-    const { resetToken } = await AuthService.verifyOTP(email, otp);
+    const { resetToken } = await verifyOTPUseCase.execute(email, otp);
     
     return sendSuccess({
       res,
@@ -150,9 +152,9 @@ export class AuthController {
     });
   }
 
-  static async resetPassword(req: Request, res: Response) {
+  async resetPassword(req: Request, res: Response) {
     const { token, newPassword } = req.body;
-    await AuthService.resetPassword(token, newPassword);
+    await resetPasswordUseCase.execute(token, newPassword);
     
     return sendSuccess({
       res,

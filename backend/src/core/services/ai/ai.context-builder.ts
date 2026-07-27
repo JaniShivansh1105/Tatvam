@@ -1,8 +1,13 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { prisma } from "../../../data/prisma.js";
 import { AIContext } from "./ai.types.js";
 
 export class AIContextBuilder {
-  static async buildContext(userId: string, lessonId?: string | null): Promise<AIContext> {
+  constructor(private readonly authRepo: IAuthRepository, private readonly progressRepo: IProgressRepository, private readonly contentRepo: IContentRepository) {}
+  async buildContext(userId: string, lessonId?: string | null): Promise<AIContext> {
     const context: AIContext = {};
 
     const user = await prisma.user.findUnique({

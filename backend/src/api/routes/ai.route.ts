@@ -1,13 +1,13 @@
 import { Router } from "express";
-import { AIController } from "../controllers/ai/ai.controller.js";
+import { aiController } from "../../di/container.js";
 import { requireAuth } from "../middleware/require-auth.js";
 
 const router = Router();
 
 // Stream a chat response from the AI Mentor
-router.post("/mentor/chat", requireAuth, AIController.chat);
+router.post("/mentor/chat", requireAuth, aiController.chat);
 
 // Get chat history
-router.get("/mentor/history", requireAuth, AIController.getHistory);
+router.get("/mentor/history", requireAuth, aiController.getHistory);
 
 export const aiRouter = router;

@@ -1,6 +1,11 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { FailureClassification } from "./ai.types.js";
 
-export class AIErrorClassifier {
+export class AIErrorClassifier implements IAIErrorClassifier {
+  constructor(private readonly eventBus: IEventBus) {}
   static classify(error: any, _provider: string): FailureClassification {
     const errString = String(error?.message || error).toLowerCase();
     

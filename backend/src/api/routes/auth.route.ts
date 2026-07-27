@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { AuthController } from "../controllers/auth/auth.controller.js";
+import { authController } from "../../di/container.js";
 import { validateRequest } from "../middleware/validate.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 import { registerSchema, loginSchema, forgotPasswordSchema, verifyOTPSchema, resetPasswordSchema } from "../../core/validators/auth/auth.validator.js";
@@ -10,41 +10,41 @@ const authRouter = Router();
 authRouter.post(
   "/register",
   validateRequest(registerSchema),
-  asyncHandler(AuthController.register)
+  asyncHandler(authController.register.bind(authController))
 );
 
 authRouter.post(
   "/login",
   validateRequest(loginSchema),
-  asyncHandler(AuthController.login)
+  asyncHandler(authController.login.bind(authController))
 );
 
 authRouter.post(
   "/refresh",
-  asyncHandler(AuthController.refresh)
+  asyncHandler(authController.refresh.bind(authController))
 );
 
 authRouter.post(
   "/logout",
-  asyncHandler(AuthController.logout)
+  asyncHandler(authController.logout.bind(authController))
 );
 
 authRouter.get(
   "/me",
   requireAuth,
-  asyncHandler(AuthController.getMe)
+  asyncHandler(authController.getMe.bind(authController))
 );
 
 authRouter.put(
   "/preferences",
   requireAuth,
-  asyncHandler(AuthController.updatePreferences)
+  asyncHandler(authController.updatePreferences.bind(authController))
 );
 
 authRouter.put(
   "/profile",
   requireAuth,
-  asyncHandler(AuthController.updateProfile)
+  asyncHandler(authController.updateProfile.bind(authController))
 );
 
 // ─── Forgot Password Flow ───
@@ -52,19 +52,19 @@ authRouter.put(
 authRouter.post(
   "/forgot-password",
   validateRequest(forgotPasswordSchema),
-  asyncHandler(AuthController.forgotPassword)
+  asyncHandler(authController.forgotPassword.bind(authController))
 );
 
 authRouter.post(
   "/verify-otp",
   validateRequest(verifyOTPSchema),
-  asyncHandler(AuthController.verifyOTP)
+  asyncHandler(authController.verifyOTP.bind(authController))
 );
 
 authRouter.post(
   "/reset-password",
   validateRequest(resetPasswordSchema),
-  asyncHandler(AuthController.resetPassword)
+  asyncHandler(authController.resetPassword.bind(authController))
 );
 
 export { authRouter };

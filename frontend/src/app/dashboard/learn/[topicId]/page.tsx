@@ -89,11 +89,21 @@ export default function LessonExperiencePage() {
     router.push(ROUTES.DASHBOARD.LEARN);
   };
 
-  if (isLoading || !lessonData) {
+  if (isLoading) {
     return (
       <LearningShell>
         <div className="w-full h-[600px] flex flex-col items-center justify-center bg-white rounded-2xl border border-[#E2E8F0]">
           <Loader2 className="w-8 h-8 animate-spin text-[#6C5CE7]" />
+        </div>
+      </LearningShell>
+    );
+  }
+  if (!lessonData) {
+    return (
+      <LearningShell>
+        <div className="w-full h-[600px] flex flex-col items-center justify-center bg-white rounded-2xl border border-[#E2E8F0] p-8 text-center">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Lesson not available</h2>
+            <p className="text-gray-600">We could not load this lesson at this time.</p>
         </div>
       </LearningShell>
     );

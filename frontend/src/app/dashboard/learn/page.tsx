@@ -25,12 +25,24 @@ export default function TopicExplorerPage() {
     staleTime: 1000 * 60 * 5, // 5 min cache
   });
 
-  if (isLoading || !KNOWLEDGE_GRAPH) {
+  if (isLoading) {
     return (
       <PageContainer>
         <ContentArea>
           <div className="w-full h-full flex items-center justify-center bg-[#F8F9FF] rounded-[32px]">
             <Loader2 className="w-8 h-8 animate-spin text-[#6C5CE7]" />
+          </div>
+        </ContentArea>
+      </PageContainer>
+    );
+  }
+  if (!KNOWLEDGE_GRAPH) {
+    return (
+      <PageContainer>
+        <ContentArea>
+          <div className="w-full h-full flex flex-col items-center justify-center bg-[#F8F9FF] rounded-[32px] p-8 text-center">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Roadmap not available</h2>
+            <p className="text-gray-600">We could not load your learning roadmap at this time.</p>
           </div>
         </ContentArea>
       </PageContainer>

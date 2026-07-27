@@ -1,9 +1,14 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { AIProvider } from "../ai.types.js";
 import { GeminiProvider } from "./gemini.provider.js";
 import { GPTProvider } from "./gpt.provider.js";
 import { GrokProvider } from "./grok.provider.js";
 
-export class ProviderRegistry {
+export class ProviderRegistry implements IProviderRegistry {
+  constructor(private readonly eventBus: IEventBus) {}
   private static providers = new Map<string, AIProvider>();
 
   static getProvider(name: string): AIProvider {

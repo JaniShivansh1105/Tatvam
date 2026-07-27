@@ -1,29 +1,31 @@
+import { getLessonUseCase, getDashboardUseCase, getRoadmapUseCase, getAchievementsUseCase } from "../../../di/container.js";
 import { Request, Response } from "express";
-import { ContentService } from "../../../core/services/content/content.service.js";
+import { GetLessonUseCase, GetDashboardUseCase, GetRoadmapUseCase, GetAchievementsUseCase } from "../../../application/content/content.use-cases.js";
 import { sendSuccess } from "../../../utils/api-response.js";
 
 export class ContentController {
-  static async getLessonBySlug(req: Request, res: Response) {
+  constructor() {}
+  async getLessonBySlug(req: Request, res: Response) {
     const slug = req.params.slug as string;
-    const lesson = await ContentService.getLessonBySlug(slug);
+    const lesson = await getLessonUseCase.execute(slug);
     return sendSuccess({ res, data: { lesson } });
   }
 
-  static async getDashboardContent(req: Request, res: Response) {
+  async getDashboardContent(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const content = await ContentService.getDashboardContent(userId);
+    const content = await getDashboardUseCase.execute(userId);
     return sendSuccess({ res, data: content });
   }
 
-  static async getRoadmap(req: Request, res: Response) {
+  async getRoadmap(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const roadmap = await ContentService.getRoadmap(userId);
+    const roadmap = await getRoadmapUseCase.execute(userId);
     return sendSuccess({ res, data: roadmap });
   }
 
-  static async getAchievements(req: Request, res: Response) {
+  async getAchievements(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const achievements = await ContentService.getAchievements(userId);
+    const achievements = await getAchievementsUseCase.execute(userId);
     return sendSuccess({ res, data: achievements });
   }
 }

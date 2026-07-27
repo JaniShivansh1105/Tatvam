@@ -1,9 +1,10 @@
+import { aiService } from "../../../di/container.js";
 import { prisma } from "../../../data/prisma.js";
 import { NotFoundError } from "../../../utils/errors.js";
 import { AIService } from "../ai/ai.service.js";
 
 export class ContentService {
-  static async getLessonBySlug(slug: string) {
+  async getLesson(slug: string) {
     let lesson = await prisma.lesson.findFirst({
       where: { slug },
       include: {
@@ -20,7 +21,7 @@ export class ContentService {
     });
 
     if (!lesson) {
-      await ContentService.ensureDefaultLessons();
+      await this.ensureDefaultLessons();
       lesson = await prisma.lesson.findFirst({
         where: { slug },
         include: {
@@ -44,7 +45,7 @@ export class ContentService {
     return lesson;
   }
 
-  static async getDashboardContent(userId: string) {
+  async getDashboard(userId: string) {
     // Parallelize all independent database queries for maximum performance
     const [user, nextLesson, activitiesCount, masteries, activePlan, studySessions, recentActivities, roadmapData] = await Promise.all([
       prisma.user.findUnique({
@@ -73,7 +74,7 @@ export class ContentService {
         take: 5,
         include: { lesson: true },
       }),
-      ContentService.getRoadmap(userId),
+      this.getRoadmap(userId),
     ]);
 
     if (!user) throw new NotFoundError("User not found");
@@ -119,7 +120,7 @@ export class ContentService {
       currentStreak: user.profile?.streak || 0,
     };
 
-    const aiRecommendations = await AIService.generateDashboardRecommendations(userId, stats, nextLesson).catch(() => ({
+    const aiRecommendations = await aiService.generateDashboardRecommendations(userId, stats, nextLesson).catch(() => ({
       aiInsight: { message: "Ready to learn something new today?", type: "encouragement" },
       weakConcepts: [],
       recommendedTopics: []
@@ -195,9 +196,9 @@ export class ContentService {
     };
   }
 
-  static async getRoadmap(userId: string) {
+  async getRoadmap(userId: string) {
     if ((await prisma.lesson.count()) === 0) {
-      await ContentService.ensureDefaultLessons();
+      await this.ensureDefaultLessons();
     }
     const lessons = await prisma.lesson.findMany({
       orderBy: { order: "asc" },
@@ -231,7 +232,7 @@ export class ContentService {
     });
   }
 
-  static async getAchievements(userId: string) {
+  async getAchievements(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { profile: true },
@@ -281,7 +282,7 @@ export class ContentService {
     };
   }
 
-  private static async ensureDefaultLessons() {
+  public async ensureDefaultLessons() {
     const count = await prisma.lesson.count();
     if (count > 0) return;
 

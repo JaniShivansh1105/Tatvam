@@ -1,42 +1,44 @@
+import { getDNAUseCase, updateDNAUseCase, getMasteryUseCase, recordInteractionUseCase, getTimelineUseCase } from "../../../di/container.js";
 import { Request, Response } from "express";
-import { ProgressService } from "../../../core/services/progress/progress.service.js";
+import { GetDNAUseCase, UpdateDNAUseCase, GetMasteryUseCase, RecordInteractionUseCase, GetTimelineUseCase } from "../../../application/progress/progress.use-cases.js";
 import { sendSuccess } from "../../../utils/api-response.js";
 
 export class ProgressController {
+  constructor() {}
   // ─── DNA (Global) ────────────────────────────────────────────────────
-  static async getDNA(req: Request, res: Response) {
+  async getDNA(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const dna = await ProgressService.getDNA(userId);
+    const dna = await getDNAUseCase.execute(userId);
     return sendSuccess({ res, data: { dna } });
   }
 
-  static async updateDNA(req: Request, res: Response) {
+  async updateDNA(req: Request, res: Response) {
     const userId = req.user!.userId;
-    const dna = await ProgressService.updateDNA(userId, req.body);
+    const dna = await updateDNAUseCase.execute(userId, req.body);
     return sendSuccess({ res, data: { dna } });
   }
 
   // ─── Mastery (Lesson-Scoped) ─────────────────────────────────────────
-  static async getMastery(req: Request, res: Response) {
+  async getMastery(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.params.lessonId as string;
-    const mastery = await ProgressService.getMastery(userId, lessonId);
+    const mastery = await getMasteryUseCase.execute(userId, lessonId);
     return sendSuccess({ res, data: { mastery } });
   }
 
-  static async recordInteraction(req: Request, res: Response) {
+  async recordInteraction(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.params.lessonId as string;
     const { conceptId, type } = req.body;
-    const mastery = await ProgressService.recordInteraction(userId, lessonId, conceptId, type);
+    const mastery = await recordInteractionUseCase.execute(userId, lessonId, conceptId, type);
     return sendSuccess({ res, data: { mastery } });
   }
 
   // ─── Timeline ────────────────────────────────────────────────────────
-  static async getTimeline(req: Request, res: Response) {
+  async getTimeline(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.query.lessonId as string | undefined;
-    const timeline = await ProgressService.getTimeline(userId, lessonId);
+    const timeline = await getTimelineUseCase.execute(userId, lessonId);
     return sendSuccess({ res, data: { timeline } });
   }
 }

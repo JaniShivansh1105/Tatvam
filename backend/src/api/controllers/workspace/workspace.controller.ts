@@ -1,14 +1,18 @@
+import { getBookmarksUseCase, addBookmarkUseCase, updateBookmarkUseCase, removeBookmarkUseCase, restoreBookmarkUseCase, getNotesUseCase, addNoteUseCase, updateNoteUseCase, removeNoteUseCase, getFlashcardsUseCase, generateFlashcardUseCase, reviewFlashcardUseCase } from "../../../di/container.js";
 import { Request, Response } from "express";
-import { WorkspaceService } from "../../../core/services/workspace/workspace.service.js";
+import { GetBookmarksUseCase, AddBookmarkUseCase, UpdateBookmarkUseCase, RemoveBookmarkUseCase, RestoreBookmarkUseCase } from "../../../application/workspace/bookmarks.use-case.js";
+import { GetNotesUseCase, AddNoteUseCase, UpdateNoteUseCase, RemoveNoteUseCase } from "../../../application/workspace/notes.use-case.js";
+import { GetFlashcardsUseCase, GenerateFlashcardUseCase, ReviewFlashcardUseCase } from "../../../application/workspace/flashcards.use-case.js";
 import { sendSuccess } from "../../../utils/api-response.js";
 
 export class WorkspaceController {
+  constructor() {}
   // ─── Bookmarks ───────────────────────────────────────────────────────────
-  static async getBookmarks(req: Request, res: Response) {
+  async getBookmarks(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.params.lessonId as string;
     const { search, folder, pinned, favorite } = req.query;
-    const bookmarks = await WorkspaceService.getBookmarks(userId, lessonId, {
+    const bookmarks = await getBookmarksUseCase.execute(userId, lessonId, {
       search: search as string | undefined,
       folder: folder as string | undefined,
       pinned: pinned === "true" ? true : undefined,
@@ -17,86 +21,86 @@ export class WorkspaceController {
     return sendSuccess({ res, data: { bookmarks } });
   }
 
-  static async addBookmark(req: Request, res: Response) {
+  async addBookmark(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.params.lessonId as string;
-    const bookmark = await WorkspaceService.addBookmark(userId, lessonId, req.body);
+    const bookmark = await addBookmarkUseCase.execute(userId, lessonId, req.body);
     return sendSuccess({ res, status: 201, data: { bookmark } });
   }
 
-  static async updateBookmark(req: Request, res: Response) {
+  async updateBookmark(req: Request, res: Response) {
     const userId = req.user!.userId;
     const id = req.params.id as string;
-    const bookmark = await WorkspaceService.updateBookmark(userId, id, req.body);
+    const bookmark = await updateBookmarkUseCase.execute(userId, id, req.body);
     return sendSuccess({ res, data: { bookmark } });
   }
 
-  static async removeBookmark(req: Request, res: Response) {
+  async removeBookmark(req: Request, res: Response) {
     const userId = req.user!.userId;
     const id = req.params.id as string;
-    await WorkspaceService.removeBookmark(userId, id);
+    await removeBookmarkUseCase.execute(userId, id);
     return sendSuccess({ res, data: { message: "Bookmark archived" } });
   }
 
-  static async restoreBookmark(req: Request, res: Response) {
+  async restoreBookmark(req: Request, res: Response) {
     const userId = req.user!.userId;
     const id = req.params.id as string;
-    const bookmark = await WorkspaceService.restoreBookmark(userId, id);
+    const bookmark = await restoreBookmarkUseCase.execute(userId, id);
     return sendSuccess({ res, data: { bookmark } });
   }
 
   // ─── Smart Notes ─────────────────────────────────────────────────────────
-  static async getNotes(req: Request, res: Response) {
+  async getNotes(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.params.lessonId as string;
     const { search, folder } = req.query;
-    const notes = await WorkspaceService.getNotes(userId, lessonId, {
+    const notes = await getNotesUseCase.execute(userId, lessonId, {
       search: search as string | undefined,
       folder: folder as string | undefined,
     });
     return sendSuccess({ res, data: { notes } });
   }
 
-  static async addNote(req: Request, res: Response) {
+  async addNote(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.params.lessonId as string;
-    const note = await WorkspaceService.addNote(userId, lessonId, req.body);
+    const note = await addNoteUseCase.execute(userId, lessonId, req.body);
     return sendSuccess({ res, status: 201, data: { note } });
   }
 
-  static async updateNote(req: Request, res: Response) {
+  async updateNote(req: Request, res: Response) {
     const userId = req.user!.userId;
     const id = req.params.id as string;
-    const note = await WorkspaceService.updateNote(userId, id, req.body);
+    const note = await updateNoteUseCase.execute(userId, id, req.body);
     return sendSuccess({ res, data: { note } });
   }
 
-  static async removeNote(req: Request, res: Response) {
+  async removeNote(req: Request, res: Response) {
     const userId = req.user!.userId;
     const id = req.params.id as string;
-    await WorkspaceService.removeNote(userId, id);
+    await removeNoteUseCase.execute(userId, id);
     return sendSuccess({ res, data: { message: "Note archived" } });
   }
 
   // ─── Flashcards ──────────────────────────────────────────────────────────
-  static async getFlashcards(req: Request, res: Response) {
+  async getFlashcards(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.params.lessonId as string;
-    const flashcards = await WorkspaceService.getFlashcards(userId, lessonId);
+    const flashcards = await getFlashcardsUseCase.execute(userId, lessonId);
     return sendSuccess({ res, data: { flashcards } });
   }
 
-  static async generateFlashcard(req: Request, res: Response) {
+  async generateFlashcard(req: Request, res: Response) {
     const userId = req.user!.userId;
     const lessonId = req.params.lessonId as string;
-    const flashcard = await WorkspaceService.generateFlashcard(userId, lessonId, req.body);
+    const flashcard = await generateFlashcardUseCase.execute(userId, lessonId, req.body);
     return sendSuccess({ res, status: 201, data: { flashcard } });
   }
 
-  static async reviewFlashcard(req: Request, res: Response) {
+  async reviewFlashcard(req: Request, res: Response) {
     const userId = req.user!.userId;
     const id = req.params.id as string;
-    const flashcard = await WorkspaceService.reviewFlashcard(userId, id, req.body);
+    const flashcard = await reviewFlashcardUseCase.execute(userId, id, req.body);
     return sendSuccess({ res, data: { flashcard } });
   }
 }

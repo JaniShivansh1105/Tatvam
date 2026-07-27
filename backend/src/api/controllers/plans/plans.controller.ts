@@ -1,53 +1,24 @@
+import { getPlansUseCase, createPlanUseCase, updateTaskStatusUseCase } from "../../../di/container.js";
 import { Request, Response } from "express";
-import { prisma } from "../../../data/prisma.js";
-import { AIService } from "../../../core/services/ai/ai.service.js";
+import { GetPlansUseCase, CreatePlanUseCase, UpdateTaskStatusUseCase } from "../../../application/plans/plans.use-cases.js";
 import { AIUnavailableError } from "../../../core/services/ai/ai.types.js";
 
 export class PlansController {
-  static async getPlans(req: Request, res: Response) {
+  async getPlans(req: Request, res: Response) {
     const userId = req.user!.userId;
     try {
-      const plans = await prisma.studyPlan.findMany({
-        where: { userId },
-        include: {
-          tasks: {
-            orderBy: { createdAt: "asc" }
-          }
-        },
-        orderBy: { startDate: "desc" }
-      });
+      const plans = await getPlansUseCase.execute(userId);
       res.json({ success: true, data: plans });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to fetch study plans" });
     }
   }
 
-  static async createPlan(req: Request, res: Response) {
+  async createPlan(req: Request, res: Response) {
     const userId = req.user!.userId;
     const { title, type } = req.body;
     try {
-      const now = new Date();
-      const endDate = new Date();
-      endDate.setDate(now.getDate() + (type === "weekly" ? 7 : 1));
-
-      const generatedTasks = await AIService.generateStudyPlanTasks(userId, type || "weekly");
-
-      const plan = await prisma.studyPlan.create({
-        data: {
-          userId,
-          title: title || `${type === "weekly" ? "Weekly" : "Daily"} Plan`,
-          type: type || "weekly",
-          startDate: now,
-          endDate: endDate,
-          tasks: {
-            create: generatedTasks.map((t: any) => ({
-              title: t.title,
-              lessonId: t.lessonId
-            }))
-          }
-        },
-        include: { tasks: true }
-      });
+      const plan = await createPlanUseCase.execute(userId, title, type);
       res.json({ success: true, data: plan });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
@@ -57,30 +28,12 @@ export class PlansController {
     }
   }
 
-  static async updateTaskStatus(req: Request, res: Response) {
+  async updateTaskStatus(req: Request, res: Response) {
     const taskId = req.params.taskId as string;
     const { status } = req.body;
     try {
-      const task = await prisma.planTask.update({
-        where: { id: taskId },
-        data: { 
-          status,
-          completedAt: status === "completed" ? new Date() : null
-        },
-        include: { plan: { include: { tasks: true } } }
-      });
-
-      // Update plan progress
-      const planTasks = (task as any).plan.tasks;
-      const completed = planTasks.filter((t: any) => t.status === "completed").length;
-      const progress = planTasks.length > 0 ? (completed / planTasks.length) * 100 : 0;
-
-      await prisma.studyPlan.update({
-        where: { id: task.planId },
-        data: { progress }
-      });
-
-      res.json({ success: true, data: { taskId, status, progress } });
+      const result = await updateTaskStatusUseCase.execute(taskId, status);
+      res.json({ success: true, data: result });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to update task" });
     }

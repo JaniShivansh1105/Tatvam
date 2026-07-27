@@ -57,8 +57,20 @@ export default function DashboardPage() {
     staleTime: 1000 * 60 * 5, // 5 min cache
   });
 
-  if (isLoading || !dashboardData) {
+  if (isLoading) {
     return <DashboardSkeleton />;
+  }
+  if (!dashboardData) {
+    return (
+      <PageContainer>
+        <ContentArea>
+          <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-white/70 rounded-3xl border border-white/80">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Could not load dashboard</h2>
+            <p className="text-gray-600">There was a problem retrieving your learning data. Please try refreshing the page.</p>
+          </div>
+        </ContentArea>
+      </PageContainer>
+    );
   }
 
   const data = dashboardData;

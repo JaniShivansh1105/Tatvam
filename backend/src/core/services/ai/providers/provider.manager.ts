@@ -1,3 +1,7 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { 
   ProviderName, 
   AIConfig, 
@@ -10,7 +14,8 @@ import { AI_PROVIDER_PRIORITY } from "../ai.config.js";
 const MAX_FAILURES_BEFORE_OPEN = 3;
 const COOLDOWN_DURATION_MS = 60 * 1000; // Default 60s cooldown
 
-export class ProviderManager {
+export class ProviderManager implements IProviderManager {
+  constructor(private readonly eventBus: IEventBus) {}
   private static metrics: Record<ProviderName, ProviderMetrics> = {
     gemini: this.createEmptyMetrics(!!process.env.GEMINI_API_KEY),
     gpt: this.createEmptyMetrics(!!process.env.OPENAI_API_KEY),

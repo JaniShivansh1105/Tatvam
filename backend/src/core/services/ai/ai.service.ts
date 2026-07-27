@@ -1,8 +1,13 @@
+import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IEventBus } from "../../events/event-bus.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { prisma } from "../../../data/prisma.js";
 import { AIOrchestrator } from "./ai.orchestrator.js";
 
-export class AIService {
-  static async *chatStream(userId: string, messages: any[], context: Record<string, any>, _provider: string = "gemini") {
+export class AIService implements IAIService {
+  constructor(private readonly chatRepo: IChatRepository, private readonly contentRepo: IContentRepository, private readonly eventBus: IEventBus) {}
+  async *chatStream(userId: string, messages: any[], context: Record<string, any>, _provider: string = "gemini") {
     const lessonId = context.lessonId as string | undefined;
 
     // Find or create an active chat session for this user + lesson
@@ -130,7 +135,7 @@ Adapt your explanation length and detail level according to these preferences.`;
     }
   }
 
-  static async getHistory(userId: string, lessonId?: string) {
+  async getHistory(userId: string, lessonId?: string) {
     let targetLessonId: string | null | undefined = lessonId;
     if (lessonId === "null" || lessonId === "") {
       targetLessonId = null;
@@ -151,16 +156,18 @@ Adapt your explanation length and detail level according to these preferences.`;
     });
   }
 
-  static async generateStudyPlanTasks(userId: string, type: string) {
+  async generateStudyPlanTasks(userId: string, type: string) {
     const lessons = await prisma.lesson.findMany({ orderBy: { order: "asc" } });
     return AIOrchestrator.execute("studyPlan", userId, { type, lessons });
   }
 
-  static async generatePracticeQuestions(userId: string, lessonId: string | null, type: string, difficulty: string) {
+  async generatePracticeQuestions(userId: string, lessonId: string | null, type: string, difficulty: string) {
     return AIOrchestrator.execute("practice", userId, { lessonId, type, difficulty });
   }
 
-  static async generateDashboardRecommendations(userId: string, stats: any, nextLesson: any) {
+  async generateDashboardRecommendations(userId: string, stats: any, nextLesson: any) {
     return AIOrchestrator.execute("recommendation", userId, { stats, nextLesson });
   }
+
+  async generateStudyArtifact(prompt: string): Promise<any> { return {}; }
 }

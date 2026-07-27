@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { WorkspaceController } from "../controllers/workspace/workspace.controller.js";
+import { workspaceController } from "../../di/container.js";
 import { requireAuth } from "../middleware/require-auth.js";
 import { asyncHandler } from "../../utils/async-handler.js";
 
@@ -8,21 +8,21 @@ const workspaceRouter = Router();
 workspaceRouter.use(requireAuth);
 
 // ─── Bookmarks (Lesson-Scoped) ──────────────────────────────────────────
-workspaceRouter.get("/lessons/:lessonId/bookmarks", asyncHandler(WorkspaceController.getBookmarks));
-workspaceRouter.post("/lessons/:lessonId/bookmarks", asyncHandler(WorkspaceController.addBookmark));
-workspaceRouter.patch("/bookmarks/:id", asyncHandler(WorkspaceController.updateBookmark));
-workspaceRouter.delete("/bookmarks/:id", asyncHandler(WorkspaceController.removeBookmark));
-workspaceRouter.post("/bookmarks/:id/restore", asyncHandler(WorkspaceController.restoreBookmark));
+workspaceRouter.get("/lessons/:lessonId/bookmarks", asyncHandler(workspaceController.getBookmarks.bind(workspaceController)));
+workspaceRouter.post("/lessons/:lessonId/bookmarks", asyncHandler(workspaceController.addBookmark.bind(workspaceController)));
+workspaceRouter.patch("/bookmarks/:id", asyncHandler(workspaceController.updateBookmark.bind(workspaceController)));
+workspaceRouter.delete("/bookmarks/:id", asyncHandler(workspaceController.removeBookmark.bind(workspaceController)));
+workspaceRouter.post("/bookmarks/:id/restore", asyncHandler(workspaceController.restoreBookmark.bind(workspaceController)));
 
 // ─── Smart Notes (Lesson-Scoped) ────────────────────────────────────────
-workspaceRouter.get("/lessons/:lessonId/notes", asyncHandler(WorkspaceController.getNotes));
-workspaceRouter.post("/lessons/:lessonId/notes", asyncHandler(WorkspaceController.addNote));
-workspaceRouter.put("/notes/:id", asyncHandler(WorkspaceController.updateNote));
-workspaceRouter.delete("/notes/:id", asyncHandler(WorkspaceController.removeNote));
+workspaceRouter.get("/lessons/:lessonId/notes", asyncHandler(workspaceController.getNotes.bind(workspaceController)));
+workspaceRouter.post("/lessons/:lessonId/notes", asyncHandler(workspaceController.addNote.bind(workspaceController)));
+workspaceRouter.put("/notes/:id", asyncHandler(workspaceController.updateNote.bind(workspaceController)));
+workspaceRouter.delete("/notes/:id", asyncHandler(workspaceController.removeNote.bind(workspaceController)));
 
 // ─── Flashcards (Lesson-Scoped) ─────────────────────────────────────────
-workspaceRouter.get("/lessons/:lessonId/flashcards", asyncHandler(WorkspaceController.getFlashcards));
-workspaceRouter.post("/lessons/:lessonId/flashcards/generate", asyncHandler(WorkspaceController.generateFlashcard));
-workspaceRouter.put("/flashcards/:id/review", asyncHandler(WorkspaceController.reviewFlashcard));
+workspaceRouter.get("/lessons/:lessonId/flashcards", asyncHandler(workspaceController.getFlashcards.bind(workspaceController)));
+workspaceRouter.post("/lessons/:lessonId/flashcards/generate", asyncHandler(workspaceController.generateFlashcard.bind(workspaceController)));
+workspaceRouter.put("/flashcards/:id/review", asyncHandler(workspaceController.reviewFlashcard.bind(workspaceController)));
 
 export { workspaceRouter };
