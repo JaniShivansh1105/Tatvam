@@ -1,11 +1,13 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
 }
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
@@ -672,9 +674,8 @@ model DocumentChunk {
   content      String   @db.Text
   chunkType    String   // Concept, Definition, Formula, Example, Exercise, Paragraph
   
-  // Vector embeddings will be handled by vector stores (pgvector, pinecone, etc.),
-  // but if we use pgvector in prisma, we'd add `embedding Unsupported("vector(768)")?`
-  // Since the user asked for abstraction, we keep it separate or decoupled.
+  embedding    Unsupported("vector(768)")?
+  
   metadata     Json?
   
   tokenCount   Int?

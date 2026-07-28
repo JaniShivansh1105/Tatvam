@@ -20,7 +20,9 @@ import { ContentService } from "../core/services/content/content.service.js";
 import { AIService } from "../core/services/ai/ai.service.js";
 import { AIContextBuilder } from "../core/services/ai/ai.context-builder.js";
 import { DocumentPipeline } from "../core/knowledge/document-pipeline.js";
-import { StubEmbeddingProvider, StubVectorRepository } from "../core/knowledge/stub-providers.js";
+import { StubVectorRepository } from "../core/knowledge/stub-providers.js";
+import { GeminiEmbeddingProvider } from "../core/knowledge/gemini-embedding.provider.js";
+import { PgVectorRepository } from "../data/repositories/knowledge/pgvector.repository.js";
 import { MasteryEngine } from "../core/learning/adaptive/mastery-engine.js";
 import { DNAEvolutionEngine } from "../core/learning/adaptive/dna-evolution-engine.js";
 import { RecommendationEngine } from "../core/learning/adaptive/recommendation-engine.js";
@@ -73,8 +75,8 @@ export const practiceRepo = new PracticeRepository(prisma);
 export const knowledgeRepo = new KnowledgeRepository(prisma);
 export const artifactRepo = new ArtifactRepository(prisma);
 
-export const vectorRepo = new StubVectorRepository();
-export const embeddingProvider = new StubEmbeddingProvider();
+export const vectorRepo = new PgVectorRepository(prisma);
+export const embeddingProvider = new GeminiEmbeddingProvider();
 
 // 3. Services
 export const aiContextBuilder = new AIContextBuilder(authRepo, progressRepo, contentRepo);

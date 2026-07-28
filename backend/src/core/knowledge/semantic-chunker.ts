@@ -15,33 +15,50 @@ export class SemanticChunker {
   static chunk(text: string, globalMetadata: Record<string, any> = {}): SemanticChunk[] {
     const chunks: SemanticChunk[] = [];
     
-    // Simulate semantic paragraph splitting
-    const paragraphs = text.split(/\\n\\n+/);
+    // Better semantic chunking with context overlap
+    const paragraphs = text.split(/\n\n+/);
     
-    for (const para of paragraphs) {
-      const content = para.trim();
-      if (!content) continue;
+    let currentContext = "";
+    
+    for (let i = 0; i < paragraphs.length; i++) {
+      const para = paragraphs[i].trim();
+      if (!para) continue;
       
       let type: ChunkType = "Paragraph";
       
-      // Basic heuristic detection for chunk typing
-      if (content.toLowerCase().startsWith("def") || content.includes(" is defined as ")) {
-        type = "Definition";
-      } else if (content.toLowerCase().includes("example:") || content.toLowerCase().includes("for instance")) {
-        type = "Example";
-      } else if (content.includes("=") && /[\\+\\-\\*\\/]/.test(content)) {
-        type = "Formula";
-      } else if (content.toLowerCase().startsWith("exercise") || content.toLowerCase().startsWith("q:")) {
-        type = "Exercise";
-      } else if (content.startsWith("#")) {
+      if (para.match(/^#{1,6}\s/)) {
         type = "Topic";
+        currentContext = para.replace(/^#{1,6}\s/, "").trim(); // Save heading as context
+      } else if (para.toLowerCase().startsWith("def") || para.includes(" is defined as ")) {
+        type = "Definition";
+      } else if (para.toLowerCase().includes("example:") || para.toLowerCase().includes("for instance")) {
+        type = "Example";
+      } else if (para.match(/^[0-9]+\. /) || para.match(/^[-*] /)) {
+        type = "Paragraph"; // List item
+      } else if (para.includes("=") && /[+\-*/]/.test(para)) {
+        type = "Formula";
+      } else if (para.toLowerCase().startsWith("exercise") || para.toLowerCase().startsWith("q:")) {
+        type = "Exercise";
+      }
+
+      // Add overlap from previous paragraph if it's short, to maintain context
+      let contentToEmbed = para;
+      if (i > 0 && para.length < 200) {
+        const prevPara = paragraphs[i - 1].trim();
+        if (prevPara.length < 500) {
+          contentToEmbed = prevPara.substring(prevPara.length - 150) + "\n\n" + para;
+        }
+      }
+
+      if (currentContext && type !== "Topic") {
+        contentToEmbed = `[Context: ${currentContext}]\n${contentToEmbed}`;
       }
 
       chunks.push({
-        content,
+        content: contentToEmbed,
         type,
-        tokenEstimate: Math.ceil(content.split(" ").length * 1.3), // Rough estimation
-        metadata: { ...globalMetadata, type }
+        tokenEstimate: Math.ceil(contentToEmbed.split(" ").length * 1.3),
+        metadata: { ...globalMetadata, type, context: currentContext }
       });
     }
 
