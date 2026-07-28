@@ -6,7 +6,11 @@ import {
   RefreshCcw, 
   CheckSquare, 
   Settings,
-  User
+  User,
+  Database,
+  FolderOpen,
+  Trophy,
+  TrendingUp
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROUTES } from "@/config/routes";
@@ -26,31 +30,35 @@ export interface NavGroup {
 export const navigationConfig: NavGroup[] = [
   {
     items: [
-      { name: "Home", href: ROUTES.DASHBOARD.HOME, icon: Home, exact: true },
+      { name: "Dashboard", href: ROUTES.DASHBOARD.HOME, icon: Home, exact: true },
     ]
   },
   {
-    label: "Learning",
+    label: "LEARNING",
     items: [
       { name: "Learn", href: ROUTES.DASHBOARD.LEARN, icon: BookOpen },
       { name: "Study Plans", href: ROUTES.DASHBOARD.PLANS, icon: Map },
     ]
   },
   {
-    label: "Intelligence",
+    label: "INTELLIGENCE",
     items: [
       { name: "AI Mentor", href: "/dashboard/mentor", icon: BrainCircuit },
+      { name: "Knowledge", href: "/workspace/knowledge", icon: Database },
+      { name: "Resources", href: "/workspace/resources", icon: FolderOpen },
     ]
   },
   {
-    label: "Progress",
+    label: "PROGRESS",
     items: [
       { name: "Practice", href: ROUTES.DASHBOARD.PRACTICE, icon: RefreshCcw },
       { name: "Assessments", href: ROUTES.DASHBOARD.ASSESSMENTS, icon: CheckSquare },
+      { name: "Achievements", href: "/dashboard/achievements", icon: Trophy },
+      { name: "Progress", href: "/dashboard/progress", icon: TrendingUp },
     ]
   },
   {
-    label: "Account",
+    label: "ACCOUNT",
     items: [
       { name: "Profile", href: "/dashboard/profile", icon: User },
       { name: "Settings", href: ROUTES.DASHBOARD.SETTINGS, icon: Settings },

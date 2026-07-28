@@ -9,7 +9,7 @@ import { ContextPanel } from "@/components/workspace/ContextPanel";
 import KnowledgePageContent from "@/components/workspace/knowledge/KnowledgePageContent";
 import ResourcesPageContent from "@/components/workspace/resources/ResourcesPageContent";
 import { useWorkspaceStore } from "@/store/workspace.store";
-import { MessageSquare, Library, BookOpen } from "lucide-react";
+import { MessageSquare, Library, BookOpen, Database, FolderOpen, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function MentorPage() {
@@ -42,7 +42,7 @@ export default function MentorPage() {
               onClick={() => handleTabChange('knowledge')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all relative ${tab === 'knowledge' ? 'text-[#6C5CE7]' : 'text-[#718096] hover:text-[#1B1D35] hover:bg-white'}`}
             >
-              <Library size={16} /> Knowledge Library
+              <Database size={16} /> Knowledge
               {tab === 'knowledge' && <motion.div layoutId="mentor-tab" className="absolute bottom-[-10px] left-0 right-0 h-0.5 bg-[#6C5CE7] rounded-t-full" />}
             </button>
             
@@ -50,8 +50,16 @@ export default function MentorPage() {
               onClick={() => handleTabChange('resources')}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all relative ${tab === 'resources' ? 'text-[#6C5CE7]' : 'text-[#718096] hover:text-[#1B1D35] hover:bg-white'}`}
             >
-              <BookOpen size={16} /> Study Resources
+              <FolderOpen size={16} /> Resources
               {tab === 'resources' && <motion.div layoutId="mentor-tab" className="absolute bottom-[-10px] left-0 right-0 h-0.5 bg-[#6C5CE7] rounded-t-full" />}
+            </button>
+
+            <button 
+              onClick={() => handleTabChange('documents')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all relative ${tab === 'documents' ? 'text-[#6C5CE7]' : 'text-[#718096] hover:text-[#1B1D35] hover:bg-white'}`}
+            >
+              <FileText size={16} /> Documents
+              {tab === 'documents' && <motion.div layoutId="mentor-tab" className="absolute bottom-[-10px] left-0 right-0 h-0.5 bg-[#6C5CE7] rounded-t-full" />}
             </button>
           </div>
 
@@ -71,14 +79,24 @@ export default function MentorPage() {
             )}
             
             {tab === 'knowledge' && (
-              <div className="w-full h-full overflow-hidden">
-                <KnowledgePageContent />
+              <div className="w-full h-full overflow-hidden flex items-center justify-center bg-[#F8F9FF]">
+                <div className="text-center">
+                  <Database className="w-12 h-12 text-[#A0AEC0] mx-auto mb-4" />
+                  <h3 className="text-lg font-bold text-[#1B1D35]">Knowledge Base</h3>
+                  <p className="text-sm text-[#718096] mt-2">Connect and explore extracted knowledge graphs.</p>
+                </div>
               </div>
             )}
 
             {tab === 'resources' && (
               <div className="w-full h-full overflow-hidden">
                 <ResourcesPageContent />
+              </div>
+            )}
+
+            {tab === 'documents' && (
+              <div className="w-full h-full overflow-hidden">
+                <KnowledgePageContent />
               </div>
             )}
           </div>
