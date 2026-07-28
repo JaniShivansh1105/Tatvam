@@ -6,6 +6,7 @@ interface UserAvatarProps {
   name?: string | null;
   email?: string | null;
   userId?: string | null;
+  avatarUrl?: string | null;
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
   className?: string;
 }
@@ -39,7 +40,7 @@ function hashString(str: string): number {
   return Math.abs(hash);
 }
 
-export function UserAvatar({ name, email, userId, size = "md", className = "" }: UserAvatarProps) {
+export function UserAvatar({ name, email, userId, avatarUrl, size = "md", className = "" }: UserAvatarProps) {
   const seed = name || userId || email || "tatvam-user";
 
   const avatarData = useMemo(() => {
@@ -68,6 +69,14 @@ export function UserAvatar({ name, email, userId, size = "md", className = "" }:
   }, [seed, name, email]);
 
   const sizeClasses = SIZE_MAP[size] || SIZE_MAP.md;
+
+  if (avatarUrl) {
+    return (
+      <div className={`relative rounded-full overflow-hidden shrink-0 shadow-sm border border-white/40 select-none ${sizeClasses} ${className}`}>
+        <img src={avatarUrl} alt={name || "User"} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
 
   return (
     <div className={`relative rounded-full overflow-hidden shrink-0 shadow-sm border border-white/40 select-none ${sizeClasses} ${className}`}>

@@ -18,6 +18,7 @@ export function UserMenu() {
         name={user?.fullName} 
         email={user?.email} 
         userId={user?.id} 
+        avatarUrl={user?.avatarUrl}
         size="md"
         className="group-hover:scale-105 transition-transform"
       />
