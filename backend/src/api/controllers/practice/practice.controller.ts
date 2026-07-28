@@ -30,10 +30,11 @@ export class PracticeController {
   }
 
   async submitAnswer(req: Request, res: Response) {
+    const userId = req.user!.userId;
     const questionId = req.params.questionId as string;
     const { answer, timeSpentMs } = req.body;
     try {
-      const updated = await submitAnswerUseCase.execute(questionId, answer, timeSpentMs);
+      const updated = await submitAnswerUseCase.execute(userId, questionId, answer, timeSpentMs);
       res.json({ success: true, data: updated });
     } catch (error) {
       if (error instanceof Error && error.message === "Question not found") {
@@ -44,9 +45,10 @@ export class PracticeController {
   }
 
   async completeSet(req: Request, res: Response) {
+    const userId = req.user!.userId;
     const setId = req.params.setId as string;
     try {
-      const updated = await completePracticeSetUseCase.execute(setId);
+      const updated = await completePracticeSetUseCase.execute(userId, setId);
       res.json({ success: true, data: updated });
     } catch (error) {
       if (error instanceof Error && error.message === "Set not found") {

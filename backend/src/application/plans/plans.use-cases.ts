@@ -43,7 +43,11 @@ export class CreatePlanUseCase {
 
 export class UpdateTaskStatusUseCase {
   constructor(private readonly plansRepo: IPlansRepository, private readonly eventBus: IEventBus) {}
-  async execute(taskId: string, status: string) {
+  async execute(userId: string, taskId: string, status: string) {
+    const existingTask = await this.plansRepo.getTaskById(taskId);
+    if (!existingTask) throw new Error("Task not found");
+    if (existingTask.plan.userId !== userId) throw new Error("Unauthorized");
+
     const task = await this.plansRepo.updateTask(taskId, status);
 
     // Update plan progress

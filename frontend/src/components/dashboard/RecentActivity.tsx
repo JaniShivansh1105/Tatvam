@@ -2,9 +2,20 @@
 
 import { motion, Variants } from "framer-motion";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { CheckCircle2, MessageSquare, PlayCircle } from "lucide-react";
+import { CheckCircle2, MessageSquare, PlayCircle, Activity } from "lucide-react";
 import { DASHBOARD_CONSTANTS } from "./constants";
-import { NoActivity } from "./empty/DashboardEmptyStates";
+
+const NoActivity = () => (
+  <GlassCard className="p-6 h-full bg-white/70 flex flex-col items-center justify-center text-center min-h-[200px]">
+    <div className="w-12 h-12 rounded-full bg-[#F1F5F9] flex items-center justify-center mb-4">
+      <Activity className="w-6 h-6 text-[#A0AEC0]" />
+    </div>
+    <h3 className="text-[16px] font-semibold text-[#1B1D35] mb-2">No Recent Activity</h3>
+    <p className="text-[14px] text-[#718096] max-w-[200px]">
+      Your learning journey starts here. Start a lesson to see your activity.
+    </p>
+  </GlassCard>
+);
 
 const itemVariants: Variants = {
   hidden: { opacity: 0, y: 15 },

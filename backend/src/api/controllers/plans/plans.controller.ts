@@ -30,10 +30,11 @@ export class PlansController {
   }
 
   async updateTaskStatus(req: Request, res: Response) {
+    const userId = req.user!.userId;
     const taskId = req.params.taskId as string;
     const { status } = req.body;
     try {
-      const result = await updateTaskStatusUseCase.execute(taskId, status);
+      const result = await updateTaskStatusUseCase.execute(userId, taskId, status);
       res.json({ success: true, data: result });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to update task" });

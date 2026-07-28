@@ -38,9 +38,12 @@ export class GeneratePracticeSetUseCase {
 
 export class SubmitAnswerUseCase {
   constructor(private readonly practiceRepo: IPracticeRepository, private readonly eventBus: IEventBus) {}
-  async execute(questionId: string, answer: string, timeSpentMs: number) {
+  async execute(userId: string, questionId: string, answer: string, timeSpentMs: number) {
     const question = await this.practiceRepo.getQuestionById(questionId);
     if (!question) throw new Error("Question not found");
+    
+    const set = await this.practiceRepo.getPracticeSetById(question.practiceSetId);
+    if (!set || set.userId !== userId) throw new Error("Unauthorized");
 
     const isCorrect = question.correctAnswer === answer;
     return this.practiceRepo.updateQuestion(questionId, {
@@ -53,9 +56,10 @@ export class SubmitAnswerUseCase {
 
 export class CompletePracticeSetUseCase {
   constructor(private readonly practiceRepo: IPracticeRepository, private readonly progressService: IProgressService, private readonly eventBus: IEventBus) {}
-  async execute(setId: string) {
+  async execute(userId: string, setId: string) {
     const set = await this.practiceRepo.getPracticeSetById(setId);
     if (!set) throw new Error("Set not found");
+    if (set.userId !== userId) throw new Error("Unauthorized");
 
     const answered = (set as any).questions.filter((q: any) => q.isCorrect !== null);
     const correct = answered.filter((q: any) => q.isCorrect === true).length;

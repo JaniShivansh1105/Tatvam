@@ -86,6 +86,7 @@ export interface IChatRepository {
 
 export interface IPlansRepository {
   getPlans(userId: string): Promise<any>;
+  getTaskById(taskId: string): Promise<any>;
   createPlan(data: any, tasksData: any[]): Promise<any>;
   updateTask(taskId: string, status: string): Promise<any>;
   updatePlanProgress(planId: string, progress: number): Promise<any>;

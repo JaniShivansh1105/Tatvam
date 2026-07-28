@@ -16,6 +16,13 @@ export class PlansRepository implements IPlansRepository {
     });
   }
 
+  async getTaskById(taskId: string) {
+    return this.prisma.planTask.findUnique({
+      where: { id: taskId },
+      include: { plan: true }
+    });
+  }
+
   async createPlan(data: Prisma.StudyPlanUncheckedCreateInput, tasksData: any[]) {
     return this.prisma.studyPlan.create({
       data: {
