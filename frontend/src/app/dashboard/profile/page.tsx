@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 const VALID_BACKEND_FIELDS = [
-  "fullName", "email",
+  "fullName", "email", "avatarUrl",
   "bio", "dateOfBirth", "country", "state", "city", "timezone", 
   "gender", "board", "medium", "gradeClass", "stream", "schoolName", 
   "preferredLanguage", "parentName", "relationship", "phone", 
@@ -37,6 +37,7 @@ function buildFormData(user: any): Record<string, any> {
   return {
     fullName: user.fullName || "",
     email: user.email || "",
+    avatarUrl: user.avatarUrl || null,
     accountType: user.accountType || "",
     ...user.profile,
     learningInterests: user.profile?.learningInterests || [],
@@ -53,6 +54,7 @@ export default function ProfilePage() {
   const [originalData, setOriginalData] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState("Changes saved successfully");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [newSubject, setNewSubject] = useState("");
 
@@ -99,9 +101,16 @@ export default function ProfilePage() {
       if (formData.fullName !== originalData.fullName) {
         payload.fullName = formData.fullName;
       }
+      
+      // Handle avatarUrl
+      if (formData.avatarUrl !== originalData.avatarUrl) {
+        payload.avatarUrl = formData.avatarUrl;
+      }
 
       if (Object.keys(payload).length === 0) return;
 
+      const isPhotoUpdate = formData.avatarUrl !== originalData.avatarUrl && Object.keys(payload).length === 1;
+      
       const res = await apiClient.post("/auth/profile/onboarding", payload);
       setUser(res.data.data.user);
 
@@ -109,6 +118,13 @@ export default function ProfilePage() {
       setFormData(updatedData);
       setOriginalData(updatedData);
 
+      // Use the specific message requested if it's only a photo update, else generic
+      if (isPhotoUpdate && payload.avatarUrl) {
+         setSaveSuccessMsg("Profile photo updated successfully.");
+      } else {
+         setSaveSuccessMsg("Changes saved successfully");
+      }
+      
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error: any) {
@@ -123,6 +139,37 @@ export default function ProfilePage() {
     if (!name) return;
     await addSubject(name);
     setNewSubject("");
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate type
+    const validTypes = ["image/jpeg", "image/jpg", "image/png"];
+    if (!validTypes.includes(file.type)) {
+      setSaveError("Only PNG, JPG and JPEG images are allowed.");
+      return;
+    }
+
+    // Validate size (2MB = 2 * 1024 * 1024 bytes)
+    if (file.size > 2 * 1024 * 1024) {
+      setSaveError("Image size must be under 2 MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        handleChange("avatarUrl", event.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ""; // reset
+  };
+
+  const handleRemovePhoto = () => {
+    handleChange("avatarUrl", null);
   };
 
   if (!user) return null;
@@ -176,7 +223,7 @@ export default function ProfilePage() {
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-2xl px-6 py-3 shadow-lg"
           >
             <Check className="w-4 h-4" />
-            <span className="text-sm font-medium">Changes saved successfully</span>
+            <span className="text-sm font-medium">{saveSuccessMsg}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -201,27 +248,33 @@ export default function ProfilePage() {
         {/* AVATAR SECTION */}
         <section className="flex items-center gap-6 bg-white p-6 rounded-[24px] shadow-sm border border-gray-100">
           <div className="relative group">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#6C5CE7] to-[#A29BFE] p-[2px] shadow-sm">
-              <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden relative">
-                {user.avatarUrl ? (
-                  <img src={user.avatarUrl} alt={user.fullName} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-[#6C5CE7] font-semibold text-3xl">{user.fullName?.charAt(0)}</span>
-                )}
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <Camera className="w-6 h-6 text-white" />
+            <label className="cursor-pointer block">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#6C5CE7] to-[#A29BFE] p-[2px] shadow-sm">
+                <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden relative">
+                  {formData.avatarUrl || user.avatarUrl ? (
+                    <img src={formData.avatarUrl || user.avatarUrl} alt={user.fullName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[#6C5CE7] font-semibold text-3xl">{user.fullName?.charAt(0)}</span>
+                  )}
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
                 </div>
               </div>
-            </div>
+              <input type="file" className="hidden" accept="image/png, image/jpeg, image/jpg" onChange={handlePhotoUpload} />
+            </label>
           </div>
           <div>
             <h3 className="text-xl font-semibold text-gray-900">{user.fullName}</h3>
             <p className="text-gray-500 text-sm mb-3">{user.accountType} Account • ID: {user.id.substring(0,8).toUpperCase()}</p>
-            <div className="flex gap-3">
-              <button className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-full transition-colors">Upload Photo</button>
-              {user.avatarUrl && (
-                <button className="px-4 py-1.5 text-red-500 hover:bg-red-50 text-sm font-medium rounded-full transition-colors">Remove</button>
+            <div className="flex gap-3 mt-1">
+              <label className="cursor-pointer px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-full transition-colors flex items-center justify-center">
+                Upload Photo
+                <input type="file" className="hidden" accept="image/png, image/jpeg, image/jpg" onChange={handlePhotoUpload} />
+              </label>
+              {(formData.avatarUrl || user.avatarUrl) && (
+                <button onClick={handleRemovePhoto} className="px-4 py-1.5 text-red-500 hover:bg-red-50 text-sm font-medium rounded-full transition-colors">Remove</button>
               )}
             </div>
           </div>

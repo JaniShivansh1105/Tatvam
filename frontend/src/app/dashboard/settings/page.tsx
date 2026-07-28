@@ -11,6 +11,7 @@ import { useEngineStore } from "@/store/engine-store";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api-client";
 import { useMutation } from "@tanstack/react-query";
+import { useNotificationStore } from "@/store/notification.store";
 
 export default function SettingsPage() {
   const { user, logout, setUser } = useAuthStore(useShallow(state => ({
@@ -55,9 +56,17 @@ export default function SettingsPage() {
     router.push("/login");
   };
 
+  const { addNotification } = useNotificationStore();
+
   const handleNotificationToggle = (checked: boolean) => {
     setNotificationsEnabled(checked);
     updatePreferencesMutation.mutate({ notificationsEnabled: checked });
+    if (checked) {
+      addNotification(
+        "Reminders Enabled",
+        "You will now receive daily learning reminders to help you stay on track!"
+      );
+    }
   };
 
   const handleLanguageChange = (lang: string) => {

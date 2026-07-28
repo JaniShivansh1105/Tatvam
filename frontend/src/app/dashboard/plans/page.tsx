@@ -28,6 +28,10 @@ export default function PlansPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["plans"] });
       setIsCreating(false);
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.error || "Failed to generate plan. Please try again.";
+      alert(msg); // Quick fallback since we don't know the exact toast library used, or we could just set a local error state.
     }
   });
 

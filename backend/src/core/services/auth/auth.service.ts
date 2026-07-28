@@ -522,13 +522,14 @@ export class AuthService {
 
     if (Object.keys(profileData).length > 0) {
       // Split user specific and profile specific fields
-      const { fullName, email, ...restProfile } = profileData;
-      if (fullName || email) {
+      const { fullName, email, avatarUrl, ...restProfile } = profileData;
+      if (fullName || email || avatarUrl !== undefined) {
         await prisma.user.update({
           where: { id: userId },
           data: {
             ...(fullName && { fullName }),
             ...(email && { email }),
+            ...(avatarUrl !== undefined && { avatarUrl }),
           }
         });
       }
