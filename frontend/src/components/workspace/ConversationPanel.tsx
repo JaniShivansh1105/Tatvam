@@ -32,14 +32,56 @@ export const ConversationPanel = () => {
     addMessage({ id: assistantId, role: 'assistant', content: '', isStreaming: true });
 
     try {
-      // Simulate typing for demo
-      let fakeText = "Based on your Learning DNA, I suggest we break this down into smaller visual chunks. Let's explore Graph Traversal step-by-step.";
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/ai/mentor/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          messages: messages.concat([{ id: Date.now().toString(), role: 'user', content: userText }]),
+          context: {} // Extend later if needed
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch response");
+
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder("utf-8");
       let current = "";
-      for (let i = 0; i < fakeText.length; i++) {
-        current += fakeText[i];
-        updateMessage(assistantId, current, true);
-        await new Promise(r => setTimeout(r, 15));
+
+      if (reader) {
+        let done = false;
+        while (!done) {
+          const { value, done: doneReading } = await reader.read();
+          done = doneReading;
+          if (value) {
+            const chunkText = decoder.decode(value, { stream: true });
+            const lines = chunkText.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const dataStr = line.slice(6);
+                if (dataStr === "[DONE]") {
+                  done = true;
+                  break;
+                }
+                try {
+                  const data = JSON.parse(dataStr);
+                  if (data.text) {
+                    current += data.text;
+                    updateMessage(assistantId, current, true);
+                  } else if (data.error) {
+                    updateMessage(assistantId, "Error: " + data.error, false);
+                    done = true;
+                  }
+                } catch (err) {}
+              }
+            }
+          }
+        }
       }
+
       updateMessage(assistantId, current, false);
       workspaceEvents.emit(EVENTS.ConversationCompleted, { messageId: assistantId, content: current });
     } catch (e) {
@@ -51,7 +93,7 @@ export const ConversationPanel = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-950 h-full relative">
+    <div className="flex-1 flex flex-col bg-white h-full relative border-r border-[#E2E8F0]">
       <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
         <AnimatePresence>
           {messages.length === 0 ? (
@@ -61,11 +103,11 @@ export const ConversationPanel = () => {
               exit={{ opacity: 0, scale: 0.95 }}
               className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4"
             >
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 border border-indigo-500/10 flex items-center justify-center mb-2 shadow-lg shadow-indigo-500/5">
-                <Sparkles className="text-indigo-400" size={32} />
+              <div className="w-16 h-16 rounded-[20px] bg-gradient-to-tr from-[#6C5CE7]/10 to-[#8B7CF6]/10 border border-[#6C5CE7]/20 flex items-center justify-center mb-2 shadow-sm">
+                <Sparkles className="text-[#6C5CE7]" size={32} />
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">How can I help you learn today?</h1>
-              <p className="text-slate-400 text-sm leading-relaxed">
+              <h1 className="text-2xl font-bold text-[#1B1D35] tracking-tight">How can I help you learn today?</h1>
+              <p className="text-[#718096] text-[14px] leading-relaxed">
                 I'm your personalized AI mentor. We can review concepts, practice problems, or explore entirely new subjects.
               </p>
             </motion.div>
@@ -80,14 +122,14 @@ export const ConversationPanel = () => {
         
         {isGenerating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4 max-w-3xl mx-auto">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-indigo-500/20 text-indigo-400">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-[#F0E6FF] text-[#6C5CE7] border border-[#6C5CE7]/20">
                <Sparkles size={16} />
             </div>
             <div className="flex-1 py-1">
-              <span className="flex gap-1">
-                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <span className="flex gap-1.5">
+                <span className="w-1.5 h-1.5 bg-[#6C5CE7] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-[#6C5CE7] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-[#6C5CE7] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </span>
             </div>
           </motion.div>
@@ -96,27 +138,27 @@ export const ConversationPanel = () => {
         <div ref={bottomRef} className="h-4" />
       </div>
 
-      <div className="p-4 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent pt-10">
+      <div className="p-4 bg-gradient-to-t from-white via-white to-transparent pt-10">
         <div className="max-w-3xl mx-auto relative group">
-          <form onSubmit={handleSend} className="relative flex items-center shadow-2xl shadow-indigo-500/5 rounded-full">
+          <form onSubmit={handleSend} className="relative flex items-center shadow-[0_4px_20px_-5px_rgba(108,92,231,0.15)] rounded-full">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything..."
-              className="w-full bg-slate-900 border border-slate-700/50 rounded-full py-4 pl-6 pr-14 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all"
+              className="w-full bg-white border border-[#E2E8F0] rounded-full py-4 pl-6 pr-14 text-[#1B1D35] placeholder-[#A0AEC0] focus:outline-none focus:ring-[3px] focus:ring-[#6C5CE7]/15 focus:border-[#6C5CE7] transition-all"
               disabled={isGenerating}
             />
             <button
               type="submit"
               disabled={!input.trim() || isGenerating}
-              className="absolute right-2 p-2.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors shadow-md"
+              className="absolute right-2 p-2.5 rounded-full bg-gradient-to-r from-[#6C5CE7] to-[#8B7CF6] hover:shadow-lg hover:shadow-[#6C5CE7]/30 text-white disabled:opacity-50 disabled:hover:shadow-none transition-all"
             >
               <Send size={18} />
             </button>
           </form>
           <div className="text-center mt-3">
-             <span className="text-[11px] font-medium text-slate-500">AI can make mistakes. Verify important academic information.</span>
+             <span className="text-[11px] font-medium text-[#A0AEC0]">AI can make mistakes. Verify important academic information.</span>
           </div>
         </div>
       </div>
@@ -133,21 +175,21 @@ const MessageBubble = ({ message }: { message: any }) => {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       className={`flex gap-4 max-w-3xl mx-auto ${isUser ? 'flex-row-reverse' : ''}`}
     >
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isUser ? 'bg-slate-800' : 'bg-indigo-500/20 text-indigo-400'}`}>
-        {isUser ? <span className="text-xs font-bold text-slate-300">U</span> : <Sparkles size={16} />}
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isUser ? 'bg-[#EDF2F7] text-[#4A5568]' : 'bg-[#F0E6FF] text-[#6C5CE7] border border-[#6C5CE7]/20'}`}>
+        {isUser ? <span className="text-xs font-bold">U</span> : <Sparkles size={14} />}
       </div>
       
       <div className={`flex-1 space-y-2 ${isUser ? 'text-right' : ''}`}>
-        <div className={`inline-block p-4 rounded-2xl ${isUser ? 'bg-slate-800 text-white rounded-tr-sm' : 'bg-transparent text-slate-200'}`}>
+        <div className={`inline-block p-4 rounded-[20px] shadow-sm ${isUser ? 'bg-[#1B1D35] text-white rounded-tr-sm' : 'bg-white text-[#2D3748] border border-[#E2E8F0] rounded-tl-sm'}`}>
           {isUser ? (
-            <p className="text-[15px]">{message.content}</p>
+            <p className="text-[14.5px] font-medium">{message.content}</p>
           ) : (
-            <div className="prose prose-invert prose-p:leading-relaxed prose-pre:bg-slate-900/50 prose-pre:border prose-pre:border-slate-800 max-w-none text-[15px]">
+            <div className="prose prose-sm max-w-none text-current prose-p:leading-relaxed prose-pre:bg-[#F8F9FF] prose-pre:text-[#2D3748] prose-pre:border prose-pre:border-[#E2E8F0]">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {message.content || '...'}
               </ReactMarkdown>
               {message.isStreaming && (
-                <span className="inline-block w-2 h-4 bg-indigo-400 ml-1 animate-pulse align-middle" />
+                <span className="inline-block w-1.5 h-3 bg-[#6C5CE7] ml-1 animate-pulse align-middle" />
               )}
             </div>
           )}

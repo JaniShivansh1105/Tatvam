@@ -9,9 +9,14 @@ interface User {
   fullName: string;
   username: string | null;
   avatarUrl: string | null;
+  accountType?: string;
+  profileCompletion?: number;
+  onboardingCompleted?: boolean;
+  onboardingStep?: string;
   profile?: any;
   preference?: any;
   learningDNA?: any;
+  userSubjects?: any[];
 }
 
 interface AuthState {
@@ -45,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       setUser: (user: User) => {
-        const isCompleted = !!(user?.profile?.country || user?.learningDNA);
+        const isCompleted = user.onboardingCompleted ?? !!(user?.profile?.country || user?.learningDNA);
         set({ user, hasCompletedOnboarding: isCompleted });
       },
 
@@ -64,8 +69,8 @@ export const useAuthStore = create<AuthState>()(
             const { data } = await apiClient.get("/auth/me");
             const fetchedUser = data.data.user;
             
-            // Onboarding is completed if profile country is saved OR learningDNA exists
-            const isCompleted = !!(fetchedUser?.profile?.country || fetchedUser?.learningDNA);
+            // Use backend onboardingCompleted flag, fallback to country if undefined
+            const isCompleted = fetchedUser?.onboardingCompleted ?? !!(fetchedUser?.profile?.country || fetchedUser?.learningDNA);
 
             set({
               user: fetchedUser,
@@ -101,6 +106,19 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // Ignore
         } finally {
+          // Clear React Query cache to prevent cross-user data leakage
+          try {
+            const { queryClient } = await import("@/components/providers/QueryProvider");
+            queryClient.clear();
+          } catch {
+            // QueryProvider may not be loaded yet
+          }
+
+          // Clear onboarding localStorage
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("tatvam_onboarding_data");
+          }
+
           set({
             user: null,
             accessToken: null,
@@ -114,6 +132,7 @@ export const useAuthStore = create<AuthState>()(
           }
         }
       },
+
     }),
     {
       name: "auth-storage",

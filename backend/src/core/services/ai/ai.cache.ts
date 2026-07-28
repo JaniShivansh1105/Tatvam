@@ -1,7 +1,4 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../events/event-bus.js";
-import { DomainEvents } from "../../events/domain-events.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import crypto from "crypto";
 
 interface CacheEntry {
@@ -9,7 +6,7 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-export class AICacheService implements IAICacheService {
+export class AICacheService  {
   constructor(private readonly eventBus: IEventBus) {}
   private static store = new Map<string, CacheEntry>();
 

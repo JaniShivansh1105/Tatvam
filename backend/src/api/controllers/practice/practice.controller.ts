@@ -21,6 +21,7 @@ export class PracticeController {
       const set = await generatePracticeSetUseCase.execute(userId, lessonId, type, difficulty);
       res.json({ success: true, data: set });
     } catch (error) {
+      console.error("Generate practice set failed:", error);
       if (error instanceof AIUnavailableError) {
         return res.status(503).json({ success: false, error: "AI services are currently unavailable." });
       }

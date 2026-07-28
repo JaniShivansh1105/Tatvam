@@ -26,7 +26,7 @@ import { DNAEvolutionEngine } from "../core/learning/adaptive/dna-evolution-engi
 import { RecommendationEngine } from "../core/learning/adaptive/recommendation-engine.js";
 
 // Use Cases
-import { RegisterUseCase, LoginUseCase, RefreshUseCase, LogoutUseCase, GetMeUseCase, UpdatePreferencesUseCase, UpdateProfileUseCase, ForgotPasswordUseCase, VerifyOTPUseCase, ResetPasswordUseCase } from "../application/auth/auth.use-cases.js";
+import { RegisterUseCase, LoginUseCase, RefreshUseCase, LogoutUseCase, GetMeUseCase, UpdatePreferencesUseCase, UpdateProfileUseCase, ForgotPasswordUseCase, VerifyOTPUseCase, ResetPasswordUseCase, UpdateOnboardingUseCase, AddSubjectUseCase, RemoveSubjectUseCase } from "../application/auth/auth.use-cases.js";
 import { GetBookmarksUseCase, AddBookmarkUseCase, UpdateBookmarkUseCase, RemoveBookmarkUseCase, RestoreBookmarkUseCase } from "../application/workspace/bookmarks.use-case.js";
 import { GetNotesUseCase, AddNoteUseCase, UpdateNoteUseCase, RemoveNoteUseCase } from "../application/workspace/notes.use-case.js";
 import { GetFlashcardsUseCase, GenerateFlashcardUseCase, ReviewFlashcardUseCase } from "../application/workspace/flashcards.use-case.js";
@@ -77,17 +77,17 @@ export const vectorRepo = new StubVectorRepository();
 export const embeddingProvider = new StubEmbeddingProvider();
 
 // 3. Services
-export const aiContextBuilder = new AIContextBuilder(authRepo, progressRepo, contentRepo, vectorRepo, embeddingProvider, eventBus);
+export const aiContextBuilder = new AIContextBuilder(authRepo, progressRepo, contentRepo);
 export const documentPipeline = new DocumentPipeline(knowledgeRepo, vectorRepo, embeddingProvider, eventBus);
-export const authService = new AuthService(authRepo, progressRepo, eventBus);
+export const authService = new AuthService();
 export const workspaceService = new WorkspaceService(workspaceRepo, progressRepo, eventBus);
 export const progressService = new ProgressService(progressRepo, eventBus);
-export const contentService = new ContentService(contentRepo, authRepo, progressRepo, workspaceRepo, eventBus);
+export const contentService = new ContentService();
 export const aiService = new AIService(chatRepo, contentRepo, aiContextBuilder, eventBus);
 
-export const masteryEngine = new MasteryEngine();
-export const dnaEvolutionEngine = new DNAEvolutionEngine();
-export const recommendationEngine = new RecommendationEngine();
+export const masteryEngine = new MasteryEngine(eventBus);
+export const dnaEvolutionEngine = new DNAEvolutionEngine(eventBus);
+export const recommendationEngine = new RecommendationEngine(eventBus);
 
 // 4. Use Cases
 // Auth
@@ -101,6 +101,9 @@ export const updateProfileUseCase = new UpdateProfileUseCase(authService, eventB
 export const forgotPasswordUseCase = new ForgotPasswordUseCase(authService, eventBus);
 export const verifyOTPUseCase = new VerifyOTPUseCase(authService, eventBus);
 export const resetPasswordUseCase = new ResetPasswordUseCase(authService, eventBus);
+export const updateOnboardingUseCase = new UpdateOnboardingUseCase(authService, eventBus);
+export const addSubjectUseCase = new AddSubjectUseCase(authService, eventBus);
+export const removeSubjectUseCase = new RemoveSubjectUseCase(authService, eventBus);
 
 // Workspace
 export const getBookmarksUseCase = new GetBookmarksUseCase(workspaceService, eventBus);
@@ -151,7 +154,7 @@ export const completePracticeSetUseCase = new CompletePracticeSetUseCase(practic
 
 // Knowledge
 export const createKnowledgeCollectionUseCase = new CreateKnowledgeCollectionUseCase(knowledgeRepo);
-export const ingestDocumentUseCase = new IngestDocumentUseCase(documentPipeline);
+export const ingestDocumentUseCase = new IngestDocumentUseCase(documentPipeline as any);
 
 // Study Tools
 export const generateEducationalArtifactUseCase = new GenerateEducationalArtifactUseCase(aiService, artifactRepo, eventBus);
@@ -168,6 +171,8 @@ export const progressController = new ProgressController();
 export const aiController = new AIController();
 export const plansController = new PlansController();
 export const practiceController = new PracticeController();
+import { KnowledgeController } from "../api/controllers/knowledge/knowledge.controller.js";
+export const knowledgeController = new KnowledgeController();
 
 // 6. Register Event Handlers
 const progressHandlers = new ProgressEventHandlers(eventBus, progressService);

@@ -1,13 +1,10 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../events/event-bus.js";
-import { DomainEvents } from "../../events/domain-events.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { AI_FEATURES } from "./ai.config.js";
 import { ProviderRegistry } from "./providers/provider.registry.js";
 import { ProviderManager } from "./providers/provider.manager.js";
 import { AIProvider, AIConfig, AIUnavailableError, ProviderName } from "./ai.types.js";
 
-export class AIRouter implements IAIRouter {
+export class AIRouter  {
   constructor(private readonly eventBus: IEventBus) {}
   async getProviderForFeature(feature: keyof typeof AI_FEATURES): Promise<{ provider: AIProvider, config: AIConfig, name: ProviderName }> {
     const config = AI_FEATURES[feature];

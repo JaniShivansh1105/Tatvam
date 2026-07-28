@@ -13,6 +13,10 @@ export const registerSchema = z.object({
     password: passwordValidation,
     fullName: z.string().min(2, "Full name must be at least 2 characters").trim(),
     username: z.string().min(3).max(30).trim().optional(),
+    accountType: z.enum(["STUDENT", "PARENT"]).default("STUDENT"),
+    countryCode: z.string().min(1).trim().optional(),
+    mobileNumber: z.string().min(7).trim().optional(),
+    termsAccepted: z.boolean().refine(val => val === true, "Must accept terms"),
   }),
 });
 
@@ -20,6 +24,7 @@ export const loginSchema = z.object({
   body: z.object({
     email: z.string().email("Invalid email address").toLowerCase().trim(),
     password: z.string().min(1, "Password is required"),
+    keepMeSignedIn: z.boolean().optional().default(false),
   }),
 });
 

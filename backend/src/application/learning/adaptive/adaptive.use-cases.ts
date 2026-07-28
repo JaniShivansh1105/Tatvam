@@ -1,28 +1,21 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IEventBus } from "../../core/events/event-bus.js";
-import { DomainEvents } from "../../core/events/domain-events.js";
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IEventBus } from "../../core/events/event-bus.js";
-import { DomainEvents } from "../../core/events/domain-events.js";
+import { IProgressRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { DomainEvents } from "../../../core/events/domain-events.js";
 import { IEventBus } from "../../../core/events/event-bus.js";
+import { IMasteryEngine, IDNAEvolutionEngine, IRecommendationEngine } from "../../../domain/interfaces/core.interface.js";
 import { MasteryEngine } from "../../../core/learning/adaptive/mastery-engine.js";
 import { RevisionScheduler } from "../../../core/learning/adaptive/revision-scheduler.js";
 import { DNAEvolutionEngine } from "../../../core/learning/adaptive/dna-evolution-engine.js";
 import { RecommendationEngine } from "../../../core/learning/adaptive/recommendation-engine.js";
-import { IProgressRepository } from "../../../domain/interfaces/repositories.interface.js";
-import { DomainEvents } from "../../../core/events/domain-events.js";
 
 export class TrackInteractionUseCase {
-  constructor(private readonly progressRepo: IProgressRepository, private readonly masteryEngine: IMasteryEngine, private readonly dnaEvolutionEngine: IDNAEvolutionEngine, private readonly eventBus: IEventBus) {}
+  constructor(private readonly progressRepo: IProgressRepository, private readonly masteryEngine: any, private readonly dnaEvolutionEngine: any, private readonly eventBus: IEventBus) {}
   async execute(userId: string, lessonId: string, conceptId: string, interaction: {
     isCorrect: boolean;
     confidenceScore: number;
     timeSpentMs: number;
     quality: number; // 0-5 for Spaced Repetition
   }) {
-    const currentMastery = await this.progressRepo.getConceptMastery(userId, lessonId, conceptId) || {};
+    const currentMastery = await (this.progressRepo as any).getConceptMasteries(userId, lessonId) || {};
 
     // 1. Update Concept Mastery
     const updatedMastery = await this.masteryEngine.processInteraction(
@@ -46,7 +39,7 @@ export class TrackInteractionUseCase {
     await this.eventBus.publish(DomainEvents.RevisionScheduled, { userId, conceptId, nextReviewAt, interval });
 
     // Save Mastery to DB
-    await this.progressRepo.updateConceptMastery(userId, lessonId, conceptId, updatedMastery);
+    await (this.progressRepo as any).upsertConceptMastery(userId, lessonId, conceptId, updatedMastery, updatedMastery);
 
     // 3. Evolve Learning DNA
     const currentDNA = await this.progressRepo.getDNA(userId);
@@ -63,7 +56,7 @@ export class TrackInteractionUseCase {
 }
 
 export class GenerateRecommendationsUseCase {
-  constructor(private readonly progressRepo: IProgressRepository, private readonly recommendationEngine: IRecommendationEngine) {}
+  constructor(private readonly progressRepo: IProgressRepository, private readonly recommendationEngine: any) {}
   async execute(userId: string) {
     const masteries = await this.progressRepo.getConceptMasteries(userId);
     const recommendations = await this.recommendationEngine.generateRecommendations(userId, masteries);

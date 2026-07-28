@@ -1,7 +1,4 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../events/event-bus.js";
-import { DomainEvents } from "../../events/domain-events.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { AIContextBuilder } from "./ai.context-builder.js";
 
 import { AIUnavailableError } from "./ai.types.js";
@@ -14,16 +11,18 @@ import * as PracticePrompts from "./prompts/practice/v1/index.js";
 import * as RecommendationPrompts from "./prompts/recommendation/v1/index.js";
 import { StudyPlanSchema, PracticeSetSchema, RecommendationSchema } from "./schemas/ai.schemas.js";
 
-export class AIOrchestrator implements IAIOrchestrator {
+export class AIOrchestrator {
   constructor(private readonly eventBus: IEventBus) {}
+
   async execute(feature: keyof typeof AI_FEATURES, userId: string, params: any) {
     const requestId = AILogger.generateRequestId();
     const startTime = Date.now();
     let fallbackTriggered = false;
 
-    // 1. Build Context
-    const context = await AIContextBuilder.buildContext(userId, params.lessonId);
-    
+    // 1. Build Context (lazy import to avoid circular dependency)
+    const { aiContextBuilder } = await import("../../../di/container.js");
+    const context = await aiContextBuilder.buildContext(userId, params.lessonId);
+
     // 2. Check Cache
     const cacheKey = JSON.stringify({ context, params });
     const cachedResponse = AICacheService.get(feature, cacheKey);
@@ -53,7 +52,7 @@ export class AIOrchestrator implements IAIOrchestrator {
           PracticePrompts.getRulesPrompt()
         ].join("\n\n");
         schema = PracticeSetSchema;
-        ttlMs = 86400000; // 24 hr (cache invalidates on mastery shift theoretically)
+        ttlMs = 86400000; // 24 hr
         break;
       case "recommendation":
         promptText = [
@@ -73,7 +72,6 @@ export class AIOrchestrator implements IAIOrchestrator {
     let validationResult: "success" | "failure" = "failure";
     let finalProviderName = "";
     
-    // Fetch ordered list of available healthy providers
     const availableProviders = (await import("./providers/provider.manager.js")).ProviderManager.getAvailableProviders(AI_FEATURES[feature]);
     
     if (availableProviders.length === 0) {
@@ -97,15 +95,13 @@ export class AIOrchestrator implements IAIOrchestrator {
         
         providerManager.reportSuccess(providerName, Date.now() - providerStartTime);
         success = true;
-        break; // Stop retrying on success
+        break;
       } catch (e: any) {
         lastError = e;
         const classification = AIErrorClassifier.classify(e, providerName);
         console.error(`[AI_ORCHESTRATOR] Provider ${providerName} failed with ${classification} for ${requestId}:`, e.message);
         
         providerManager.reportFailure(providerName, classification);
-        
-        // If it's a prompt/JSON structural issue, switching providers might not help, but we still try the next.
         fallbackTriggered = true;
       }
     }

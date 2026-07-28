@@ -1,7 +1,4 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../events/event-bus.js";
-import { DomainEvents } from "../../events/domain-events.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import crypto from "crypto";
 
 export interface AILogMetadata {
@@ -20,7 +17,7 @@ export interface AILogMetadata {
   };
 }
 
-export class AILogger implements IAILogger {
+export class AILogger  {
   constructor(private readonly eventBus: IEventBus) {}
   static generateRequestId(): string {
     return crypto.randomUUID();

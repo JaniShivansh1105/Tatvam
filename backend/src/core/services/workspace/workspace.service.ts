@@ -1,7 +1,6 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IWorkspaceService } from "../../../domain/interfaces/services.interface.js";
+import { IWorkspaceRepository, IProgressRepository } from "../../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../events/event-bus.js";
-import { DomainEvents } from "../../events/domain-events.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { prisma } from "../../../data/prisma.js";
 import { NotFoundError, ForbiddenError } from "../../../utils/errors.js";
 

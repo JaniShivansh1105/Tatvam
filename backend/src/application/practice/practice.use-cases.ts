@@ -1,5 +1,5 @@
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IPlansRepository, IPracticeRepository, IChatRepository, IKnowledgeRepository, IArtifactRepository, IProgressRepository } from "../../domain/interfaces/repositories.interface.js";
+import { IProgressService, IAIService } from "../../domain/interfaces/services.interface.js";
+import { IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../core/events/event-bus.js";
 import { IDocumentPipeline, IMasteryEngine, IDNAEvolutionEngine, IRecommendationEngine } from "../../domain/interfaces/core.interface.js";
 import { PracticeRepository } from "../../data/repositories/practice.repository.js";
@@ -68,6 +68,14 @@ export class CompletePracticeSetUseCase {
 
     await this.progressService.logActivity(set.userId, "PRACTICE_COMPLETED", set.lessonId || undefined, { setId, score });
     await this.progressService.getDNA(set.userId);
+
+    // Emit domain events
+    const { DomainEvents } = await import("../../core/events/domain-events.js");
+    await this.eventBus.publish(DomainEvents.PracticeCompleted, { userId: set.userId, lessonId: set.lessonId, setId, score });
+    
+    if ((set as any).type === "mock_test") {
+      await this.eventBus.publish(DomainEvents.AssessmentCompleted, { userId: set.userId, lessonId: set.lessonId, setId, score });
+    }
 
     return updated;
   }

@@ -11,6 +11,7 @@ import { progressRouter } from "./api/routes/progress.route.js";
 import { aiRouter } from "./api/routes/ai.route.js";
 import { plansRouter } from "./api/routes/plans.route.js";
 import { practiceRouter } from "./api/routes/practice.route.js";
+import { knowledgeRouter } from "./api/routes/knowledge.route.js";
 import { errorHandler } from "./api/middleware/error-handler.js";
 import { requestLogger } from "./api/middleware/request-logger.js";
 import { notFoundHandler } from "./api/middleware/not-found.js";
@@ -54,6 +55,7 @@ app.use("/api/content", contentRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/plans", plansRouter);
 app.use("/api/practice", practiceRouter);
+app.use("/api/knowledge", knowledgeRouter);
 
 // ─── Fallback Handlers (must be last) ───────────────────────────────────────
 app.use(notFoundHandler);

@@ -17,8 +17,8 @@ export const ContextPanel = () => {
   if (!isRightPanelOpen) return null;
 
   return (
-    <aside className="w-80 bg-slate-950 border-l border-slate-800 flex flex-col h-full text-slate-300">
-      <div className="flex border-b border-slate-800 px-2 py-2 gap-1 shrink-0">
+    <aside className="w-full bg-[#F8F9FF] flex flex-col h-full text-[#4A5568] z-10">
+      <div className="flex border-b border-[#E2E8F0] px-2 py-2 gap-1 shrink-0 bg-white">
         <TabButton 
           active={activeRightPanel === 'context'} 
           onClick={() => setActiveRightPanel('context')}
@@ -65,7 +65,7 @@ export const ContextPanel = () => {
 const TabButton = ({ active, onClick, icon, label }: any) => (
   <button 
     onClick={onClick}
-    className={`flex items-center justify-center gap-2 flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${active ? 'bg-slate-800 text-white' : 'hover:bg-slate-900 text-slate-400'}`}
+    className={`flex items-center justify-center gap-2 flex-1 py-1.5 rounded-md text-[13px] font-bold transition-all ${active ? 'bg-[#F0E6FF] text-[#6C5CE7] shadow-sm' : 'hover:bg-[#EDF2F7] text-[#718096]'}`}
   >
     {icon}
     {label}
@@ -84,10 +84,8 @@ const ContextView = () => {
     });
     
     const unsubConversation = workspaceEvents.subscribe(EVENTS.ConversationCompleted, (payload) => {
-      // Simulate backend pushing retrieved knowledge after a chat completes
-      setTimeout(() => {
-        workspaceEvents.emit(EVENTS.KnowledgeRetrieved, "Graph Traversal techniques (BFS, DFS) were recently covered in your module. Recalling these visual patterns increases retention by 34%.");
-      }, 500);
+      // In a real implementation, the backend would either include context in the chat response
+      // or push it via a separate SSE channel.
     });
     
     return () => {
@@ -98,59 +96,59 @@ const ContextView = () => {
 
   return (
     <div className="space-y-4">
-      <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 shadow-sm">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <BookOpen size={14} className="text-indigo-400" /> Current Topic
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <BookOpen size={14} className="text-[#6C5CE7]" /> Current Topic
         </h3>
-        <p className="text-sm font-medium text-slate-200">{currentTopic}</p>
+        <p className="text-sm font-bold text-[#1B1D35]">{currentTopic}</p>
       </div>
 
-      <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 shadow-sm">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Target size={14} className="text-emerald-400" /> Learning Goal
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Target size={14} className="text-[#38A169]" /> Learning Goal
         </h3>
-        <p className="text-sm font-medium text-slate-200">{learningGoal}</p>
+        <p className="text-sm font-bold text-[#1B1D35]">{learningGoal}</p>
       </div>
 
       <AnimatePresence>
         {retrievedContext && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-            <div className="bg-indigo-950/30 rounded-xl p-4 border border-indigo-500/20 shadow-sm my-4">
-              <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <div className="bg-[#F0E6FF] rounded-[16px] p-4 border border-[#6C5CE7]/20 shadow-sm my-4">
+              <h3 className="text-xs font-bold text-[#6C5CE7] uppercase tracking-wider mb-2 flex items-center gap-2">
                 <Brain size={14} /> Knowledge Retrieved
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">{retrievedContext}</p>
+              <p className="text-xs text-[#4A5568] leading-relaxed font-medium">{retrievedContext}</p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 shadow-sm">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <AlertCircle size={14} className="text-rose-400" /> Focus Areas
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <AlertCircle size={14} className="text-[#E53E3E]" /> Focus Areas
         </h3>
         <div className="flex flex-wrap gap-2">
           {weakConcepts.map(concept => (
-            <span key={concept} className="px-2 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-md text-xs font-medium">
+            <span key={concept} className="px-2 py-1 bg-[#FFF5F5] text-[#E53E3E] border border-[#FED7D7] rounded-md text-[11px] font-bold">
               {concept}
             </span>
           ))}
         </div>
       </div>
 
-      <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 shadow-sm">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Activity size={14} className="text-amber-400" /> Recommendations
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Activity size={14} className="text-[#D69E2E]" /> Recommendations
         </h3>
         <div className="space-y-3">
           {recommendations.slice(0, 2).map(rec => (
-            <div key={rec.id} className="border border-slate-800 bg-slate-950/50 rounded-lg p-3">
+            <div key={rec.id} className="border border-[#E2E8F0] bg-[#F8F9FF] rounded-xl p-3">
               <div className="flex justify-between items-start mb-1">
-                <h4 className="text-sm font-medium text-slate-200">{rec.title}</h4>
-                {rec.isUrgent && <div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5" />}
+                <h4 className="text-[13px] font-bold text-[#1B1D35]">{rec.title}</h4>
+                {rec.isUrgent && <div className="w-2 h-2 rounded-full bg-[#D69E2E] mt-1.5" />}
               </div>
-              <p className="text-xs text-slate-400 mb-2">{rec.description}</p>
-              <button className="text-xs font-bold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
+              <p className="text-xs text-[#718096] mb-2">{rec.description}</p>
+              <button className="text-xs font-bold text-[#6C5CE7] hover:text-[#8B7CF6] flex items-center gap-1 transition-colors">
                 {rec.actionLabel} <ArrowUpRight size={12} />
               </button>
             </div>
@@ -179,9 +177,9 @@ const ArtifactsView = () => {
   return (
     <div className="space-y-4">
       {artifacts.length === 0 ? (
-        <div className="text-center p-6 bg-slate-900 border border-slate-800 rounded-xl">
-          <FileText size={24} className="mx-auto text-slate-600 mb-2" />
-          <p className="text-sm text-slate-400">No artifacts generated yet. Ask the AI to create notes or flashcards.</p>
+        <div className="text-center p-6 bg-white border border-[#E2E8F0] rounded-[16px] shadow-sm">
+          <FileText size={24} className="mx-auto text-[#A0AEC0] mb-2" />
+          <p className="text-sm font-medium text-[#718096]">No artifacts generated yet. Ask the AI to create notes or flashcards.</p>
         </div>
       ) : (
         artifacts.map(art => (
@@ -199,17 +197,17 @@ const ProgressView = () => {
     <div className="space-y-4">
       <ProgressCard />
       
-      <div className="bg-slate-900 rounded-xl p-4 border border-slate-800 shadow-sm mt-4">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Activity size={14} className="text-emerald-400" /> Recent Mastery
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm mt-4 hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-4 flex items-center gap-2">
+          <Activity size={14} className="text-[#38A169]" /> Recent Mastery
         </h3>
         <div className="space-y-3">
           {recentMasteryChanges.map((change, i) => (
             <div key={i} className="flex items-center justify-between">
-              <span className="text-sm text-slate-300">{change.concept}</span>
+              <span className="text-[13px] font-bold text-[#1B1D35]">{change.concept}</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">{Math.round(change.masteryLevel * 100)}%</span>
-                <span className={`text-xs font-bold ${change.recentDelta > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <span className="text-[11px] font-bold text-[#718096]">{Math.round(change.masteryLevel * 100)}%</span>
+                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${change.recentDelta > 0 ? 'text-[#38A169] bg-[#F0FFF4] border-[#C6F6D5]' : 'text-[#E53E3E] bg-[#FFF5F5] border-[#FED7D7]'}`}>
                   {change.recentDelta > 0 ? '+' : ''}{Math.round(change.recentDelta * 100)}%
                 </span>
               </div>

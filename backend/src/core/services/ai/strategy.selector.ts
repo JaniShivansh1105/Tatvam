@@ -1,10 +1,7 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../events/event-bus.js";
-import { DomainEvents } from "../../events/domain-events.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { EducationalIntent, LearningStrategy, AIContext } from "./ai.types.js";
 
-export class StrategySelector implements IStrategySelector {
+export class StrategySelector  {
   constructor(private readonly eventBus: IEventBus) {}
   static selectStrategy(intent: EducationalIntent, context: AIContext): LearningStrategy {
     const dna = context.learningDNA;

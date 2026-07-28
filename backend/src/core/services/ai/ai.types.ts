@@ -1,7 +1,3 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
-import { IEventBus } from "../../events/event-bus.js";
-import { DomainEvents } from "../../events/domain-events.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 export type ProviderName = "gemini" | "gpt" | "grok";
 
 export interface AIConfig {
@@ -67,3 +63,6 @@ export class AIUnavailableError extends Error {
     this.name = "AIUnavailableError";
   }
 }
+
+export type EducationalIntent = string;
+export type LearningStrategy = string;

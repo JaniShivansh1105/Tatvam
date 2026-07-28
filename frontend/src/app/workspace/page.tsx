@@ -1,16 +1,5 @@
-"use client";
-
-import React from 'react';
-import { Sidebar } from '../../components/workspace/Sidebar';
-import { ConversationPanel } from '../../components/workspace/ConversationPanel';
-import { ContextPanel } from '../../components/workspace/ContextPanel';
+import { redirect } from 'next/navigation';
 
 export default function WorkspacePage() {
-  return (
-    <>
-      <Sidebar />
-      <ConversationPanel />
-      <ContextPanel />
-    </>
-  );
+  redirect('/dashboard/mentor');
 }

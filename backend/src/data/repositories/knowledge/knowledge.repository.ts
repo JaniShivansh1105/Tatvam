@@ -1,5 +1,4 @@
 import { prisma } from "../../prisma.js";
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
 import { IKnowledgeRepository } from "../../../domain/interfaces/knowledge/knowledge.interface.js";
 
 export class KnowledgeRepository implements IKnowledgeRepository {

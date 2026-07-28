@@ -16,6 +16,7 @@ export const ROUTES = {
   REGISTER: "/register",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
+  ONBOARDING: "/onboarding",
 
   // Dashboard / App Routes (Protected)
   DASHBOARD: {

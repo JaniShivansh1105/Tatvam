@@ -1,3 +1,5 @@
+import { IAuthService } from "../../domain/interfaces/services.interface.js";
+import { IEventBus } from "../../core/events/event-bus.js";
 import { AuthService } from "../../core/services/auth/auth.service.js";
 
 export class RegisterUseCase {
@@ -80,3 +82,26 @@ export class ResetPasswordUseCase {
   }
 }
 
+export class UpdateOnboardingUseCase {
+  constructor(private readonly authService: IAuthService, private readonly eventBus: IEventBus) {}
+  async execute(...args: any[]) {
+    // @ts-ignore
+    return this.authService.updateOnboarding(...args);
+  }
+}
+
+export class AddSubjectUseCase {
+  constructor(private readonly authService: IAuthService, private readonly eventBus: IEventBus) {}
+  async execute(...args: any[]) {
+    // @ts-ignore
+    return this.authService.addSubject(...args);
+  }
+}
+
+export class RemoveSubjectUseCase {
+  constructor(private readonly authService: IAuthService, private readonly eventBus: IEventBus) {}
+  async execute(...args: any[]) {
+    // @ts-ignore
+    return this.authService.removeSubject(...args);
+  }
+}

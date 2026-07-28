@@ -1,5 +1,5 @@
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IPlansRepository, IPracticeRepository, IChatRepository, IKnowledgeRepository, IArtifactRepository, IProgressRepository } from "../../domain/interfaces/repositories.interface.js";
+import { IAIService } from "../../domain/interfaces/services.interface.js";
+import { IPlansRepository } from "../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../core/events/event-bus.js";
 import { IDocumentPipeline, IMasteryEngine, IDNAEvolutionEngine, IRecommendationEngine } from "../../domain/interfaces/core.interface.js";
 import { PlansRepository } from "../../data/repositories/plans.repository.js";
@@ -26,13 +26,18 @@ export class CreatePlanUseCase {
       lessonId: t.lessonId
     }));
 
-    return this.plansRepo.createPlan({
+    const plan = await this.plansRepo.createPlan({
       userId,
       title: title || `${type === "weekly" ? "Weekly" : "Daily"} Plan`,
       type: type || "weekly",
       startDate: now,
       endDate: endDate,
     }, tasksData);
+
+    const { DomainEvents } = await import("../../core/events/domain-events.js");
+    await this.eventBus.publish(DomainEvents.StudyPlanCreated, { userId, planId: plan.id, type });
+
+    return plan;
   }
 }
 

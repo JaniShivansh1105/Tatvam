@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Eye, EyeOff, AlertCircle, BrainCircuit, BookOpen, Zap, MessageSquare, ArrowLeft } from "lucide-react";
+import { Loader2, Eye, EyeOff, AlertCircle, BrainCircuit, BookOpen, Zap, MessageSquare, ArrowLeft, Award } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useAuthStore } from "../../../store/auth-store";
 import { ROUTES } from "@/config/routes";
@@ -15,12 +15,15 @@ import { ROUTES } from "@/config/routes";
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address").trim(),
   password: z.string().min(1, "Password is required"),
+  keepMeSignedIn: z.boolean().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRegistered = searchParams.get("registered") === "true";
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
   
@@ -34,6 +37,9 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      keepMeSignedIn: false,
+    },
   });
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -50,7 +56,11 @@ export default function LoginPage() {
       // Pre-warm dashboard cache in background while navigating
       apiClient.get("/content/dashboard").catch(() => {});
       
-      router.push(ROUTES.DASHBOARD.HOME);
+      if (!user.onboardingCompleted) {
+        router.push(ROUTES.ONBOARDING || "/onboarding");
+      } else {
+        router.push(ROUTES.DASHBOARD.HOME);
+      }
     } catch (error: any) {
       if (error?.code === "ERR_NETWORK" || error?.message === "Network Error") {
         setGlobalError("Unable to connect to the server. Please check your internet connection.");
@@ -186,6 +196,17 @@ export default function LoginPage() {
                   <p className="font-medium">{globalError}</p>
                 </motion.div>
               )}
+              {isRegistered && !globalError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="bg-[#F0FFF4] text-[#2F855A] text-[14px] px-4 py-3 rounded-[16px] mb-6 flex items-center gap-3 overflow-hidden border border-[#C6F6D5]"
+                >
+                  <Award className="w-5 h-5 shrink-0" strokeWidth={2} />
+                  <p className="font-medium">Account created successfully! Please sign in.</p>
+                </motion.div>
+              )}
             </AnimatePresence>
 
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
@@ -251,14 +272,14 @@ export default function LoginPage() {
 
               <div className="flex items-center gap-3 mt-1 mb-1 ml-1">
                 <label className="relative flex items-center justify-center cursor-pointer group">
-                  <input type="checkbox" id="remember" className="peer sr-only" />
+                  <input type="checkbox" id="keepMeSignedIn" className="peer sr-only" {...register("keepMeSignedIn")} />
                   <div className="w-5 h-5 rounded-[6px] border border-[#CBD5E0] bg-white group-hover:border-[#A29BFE] peer-checked:bg-[#6C5CE7] peer-checked:border-[#6C5CE7] peer-focus-visible:ring-[3px] peer-focus-visible:ring-[#6C5CE7]/20 transition-all duration-200 shadow-sm" />
                   <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity duration-200" viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </label>
-                <label htmlFor="remember" className="text-[14px] font-medium text-[#718096] cursor-pointer select-none hover:text-[#1B1D35] transition-colors">
-                  Remember me
+                <label htmlFor="keepMeSignedIn" className="text-[14px] font-medium text-[#718096] cursor-pointer select-none hover:text-[#1B1D35] transition-colors">
+                  Keep me signed in for 15 days
                 </label>
               </div>
 
@@ -300,5 +321,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex w-full h-[100dvh] items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[#6C5CE7]" /></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

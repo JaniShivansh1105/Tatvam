@@ -1,5 +1,5 @@
+import { IWorkspaceRepository } from "../../domain/interfaces/repositories.interface.js";
 import { prisma } from "../prisma.js";
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
 import { Prisma } from "@prisma/client";
 
 export class WorkspaceRepository implements IWorkspaceRepository {

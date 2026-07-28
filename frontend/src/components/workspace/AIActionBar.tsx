@@ -55,7 +55,7 @@ export const AIActionBar = () => {
 const ActionPill = ({ icon, label, onClick }: any) => (
   <button 
     onClick={onClick}
-    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 transition-colors text-[13px] font-medium"
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#6C5CE7]/20 bg-[#F0E6FF] hover:bg-[#6C5CE7] text-[#6C5CE7] hover:text-white transition-colors text-[13px] font-bold"
   >
     {icon} {label}
   </button>

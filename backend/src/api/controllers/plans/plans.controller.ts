@@ -21,6 +21,7 @@ export class PlansController {
       const plan = await createPlanUseCase.execute(userId, title, type);
       res.json({ success: true, data: plan });
     } catch (error) {
+      console.error("Create plan failed:", error);
       if (error instanceof AIUnavailableError) {
         return res.status(503).json({ success: false, error: "AI services are currently unavailable." });
       }

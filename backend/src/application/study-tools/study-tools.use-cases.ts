@@ -1,15 +1,7 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IEventBus } from "../../core/events/event-bus.js";
-import { DomainEvents } from "../../core/events/domain-events.js";
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IEventBus } from "../../core/events/event-bus.js";
-import { DomainEvents } from "../../core/events/domain-events.js";
-import { IArtifactRepository } from "../../domain/interfaces/study-tools/artifact.repository.interface.js";
 import { IAIService } from "../../domain/interfaces/services.interface.js";
-import { IEventBus } from "../../core/events/event-bus.js";
 import { DomainEvents } from "../../core/events/domain-events.js";
+import { IEventBus } from "../../core/events/event-bus.js";
+import { IArtifactRepository } from "../../domain/interfaces/study-tools/artifact.repository.interface.js";
 
 export class GenerateEducationalArtifactUseCase {
   constructor(private readonly aiService: IAIService, private readonly artifactRepo: IArtifactRepository, private readonly eventBus: IEventBus) {}

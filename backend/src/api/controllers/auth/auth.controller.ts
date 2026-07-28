@@ -1,6 +1,6 @@
 import { registerUseCase, loginUseCase, refreshUseCase, logoutUseCase, getMeUseCase, updatePreferencesUseCase, updateProfileUseCase, forgotPasswordUseCase, verifyOTPUseCase, resetPasswordUseCase } from "../../../di/container.js";
 import { Request, Response } from "express";
-import { RegisterUseCase, LoginUseCase, RefreshUseCase, LogoutUseCase, GetMeUseCase, UpdatePreferencesUseCase, UpdateProfileUseCase, ForgotPasswordUseCase, VerifyOTPUseCase, ResetPasswordUseCase } from "../../../application/auth/auth.use-cases.js";
+import { RegisterUseCase, LoginUseCase, RefreshUseCase, LogoutUseCase, GetMeUseCase, UpdatePreferencesUseCase, UpdateProfileUseCase, ForgotPasswordUseCase, VerifyOTPUseCase, ResetPasswordUseCase, UpdateOnboardingUseCase, AddSubjectUseCase, RemoveSubjectUseCase } from "../../../application/auth/auth.use-cases.js";
 import { sendSuccess } from "../../../utils/api-response.js";
 import {
   getRefreshTokenCookieOptions,
@@ -22,7 +22,7 @@ export class AuthController {
       sessionInfo
     );
 
-    res.cookie("refreshToken", refreshTokenString, getRefreshTokenCookieOptions());
+    res.cookie("refreshToken", refreshTokenString, getRefreshTokenCookieOptions(true));
 
     return sendSuccess({
       res,
@@ -42,7 +42,7 @@ export class AuthController {
       sessionInfo
     );
 
-    res.cookie("refreshToken", refreshTokenString, getRefreshTokenCookieOptions());
+    res.cookie("refreshToken", refreshTokenString, getRefreshTokenCookieOptions(req.body.keepMeSignedIn));
 
     return sendSuccess({
       res,
@@ -128,6 +128,31 @@ export class AuthController {
       res,
       data: { user },
     });
+  }
+
+  async updateOnboarding(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    // We import updateOnboardingUseCase dynamically or it can be injected. 
+    // Wait, the container has it exported. We should import it at the top.
+    const { updateOnboardingUseCase, addSubjectUseCase, removeSubjectUseCase } = await import("../../../di/container.js");
+    const user = await updateOnboardingUseCase.execute(userId, req.body);
+    return sendSuccess({ res, data: { user } });
+  }
+
+  async addSubject(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const { name } = req.body;
+    const { addSubjectUseCase } = await import("../../../di/container.js");
+    const subjects = await addSubjectUseCase.execute(userId, name);
+    return sendSuccess({ res, data: { subjects } });
+  }
+
+  async removeSubject(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const { id } = req.params;
+    const { removeSubjectUseCase } = await import("../../../di/container.js");
+    const subjects = await removeSubjectUseCase.execute(userId, id);
+    return sendSuccess({ res, data: { subjects } });
   }
 
   // ─── Forgot Password Flow ───────────────────────────────────────────────

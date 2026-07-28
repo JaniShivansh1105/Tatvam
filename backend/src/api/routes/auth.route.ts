@@ -47,6 +47,24 @@ authRouter.put(
   asyncHandler(authController.updateProfile.bind(authController))
 );
 
+authRouter.post(
+  "/profile/onboarding",
+  requireAuth,
+  asyncHandler(authController.updateOnboarding.bind(authController))
+);
+
+authRouter.post(
+  "/profile/subjects",
+  requireAuth,
+  asyncHandler(authController.addSubject.bind(authController))
+);
+
+authRouter.delete(
+  "/profile/subjects/:id",
+  requireAuth,
+  asyncHandler(authController.removeSubject.bind(authController))
+);
+
 // ─── Forgot Password Flow ───
 
 authRouter.post(

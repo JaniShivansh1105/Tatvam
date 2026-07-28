@@ -57,15 +57,15 @@ export const KnowledgeSearch = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex justify-center p-4 pt-20">
+      <div className="fixed inset-0 bg-[#1B1D35]/20 backdrop-blur-sm z-50 flex justify-center p-4 pt-20">
         <motion.div 
           initial={{ opacity: 0, y: -20, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -20, scale: 0.98 }}
-          className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[70vh]"
+          className="w-full max-w-3xl bg-white border border-[#E2E8F0] rounded-[24px] shadow-2xl flex flex-col overflow-hidden max-h-[70vh]"
         >
-          <div className="p-4 border-b border-slate-800 bg-slate-900 flex items-center gap-3">
-            <Search className="text-slate-400 shrink-0" size={20} />
+          <div className="p-4 border-b border-[#E2E8F0] bg-white flex items-center gap-3">
+            <Search className="text-[#A0AEC0] shrink-0" size={20} />
             <form onSubmit={handleSearch} className="flex-1">
               <input
                 id="knowledge-search-input"
@@ -73,58 +73,58 @@ export const KnowledgeSearch = ({ onClose }: { onClose: () => void }) => {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Ask your knowledge base or search for concepts..."
-                className="w-full bg-transparent border-none text-white placeholder-slate-500 focus:outline-none focus:ring-0 text-lg"
+                className="w-full bg-transparent border-none text-[#1B1D35] placeholder-[#A0AEC0] focus:outline-none focus:ring-0 text-lg"
               />
             </form>
             {query && (
-              <button onClick={() => setQuery('')} className="p-1 text-slate-400 hover:text-white rounded">
+              <button onClick={() => setQuery('')} className="p-1 text-[#A0AEC0] hover:text-[#1B1D35] rounded">
                 <X size={16} />
               </button>
             )}
-            <div className="w-px h-6 bg-slate-800 mx-2" />
-            <button onClick={onClose} className="px-3 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md transition-colors">
+            <div className="w-px h-6 bg-[#E2E8F0] mx-2" />
+            <button onClick={onClose} className="px-3 py-1.5 text-xs font-bold bg-[#F8F9FF] border border-[#E2E8F0] hover:bg-[#EDF2F7] text-[#4A5568] rounded-md transition-colors">
               ESC
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-2 bg-[#F8F9FF]">
             {isSearching ? (
-              <div className="p-12 flex flex-col items-center justify-center text-slate-400 space-y-4">
-                <BrainCircuit size={32} className="animate-pulse text-indigo-500" />
+              <div className="p-12 flex flex-col items-center justify-center text-[#718096] space-y-4">
+                <BrainCircuit size={32} className="animate-pulse text-[#6C5CE7]" />
                 <p className="text-sm">Searching semantic vectors...</p>
               </div>
             ) : results.length > 0 ? (
               <div className="p-2 space-y-2">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 mb-3">Semantic Matches</h3>
+                <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider px-2 mb-3">Semantic Matches</h3>
                 {results.map(res => (
                   <button 
                     key={res.id}
                     onClick={() => handleResultClick(res.documentId)}
-                    className="w-full text-left p-4 rounded-xl hover:bg-slate-800 border border-transparent hover:border-slate-700 transition-all group"
+                    className="w-full text-left p-4 rounded-xl hover:bg-white bg-white/50 border border-transparent hover:border-[#6C5CE7]/30 hover:shadow-sm transition-all group"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2 text-indigo-400 text-sm font-medium">
+                      <div className="flex items-center gap-2 text-[#6C5CE7] text-sm font-bold">
                         <FileText size={14} /> {res.documentTitle}
                       </div>
-                      <div className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                      <div className="text-[10px] font-bold text-[#38A169] border border-[#C6F6D5] bg-[#F0FFF4] px-2 py-0.5 rounded">
                         {Math.round(res.relevanceScore * 100)}% MATCH
                       </div>
                     </div>
-                    <p className="text-sm text-slate-300 leading-relaxed group-hover:text-white transition-colors">
+                    <p className="text-sm text-[#4A5568] leading-relaxed transition-colors">
                       {res.matchedText}
                     </p>
                   </button>
                 ))}
               </div>
             ) : query && !isSearching ? (
-              <div className="p-12 text-center text-slate-500">
+              <div className="p-12 text-center text-[#718096]">
                 <p>No semantic matches found for "{query}".</p>
               </div>
             ) : (
               <div className="p-2 space-y-2">
                 {recentSearches.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 mb-2 flex items-center gap-2">
+                    <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider px-2 mb-2 flex items-center gap-2">
                       <Clock size={12} /> Recent Searches
                     </h3>
                     <div className="space-y-1">
@@ -132,10 +132,10 @@ export const KnowledgeSearch = ({ onClose }: { onClose: () => void }) => {
                         <button 
                           key={i} 
                           onClick={() => { setQuery(s); setTimeout(() => handleSearch({ preventDefault: () => {} } as any), 0); }}
-                          className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors text-sm group"
+                          className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-white bg-transparent border border-transparent hover:border-[#E2E8F0] hover:shadow-sm text-[#4A5568] transition-colors text-sm group"
                         >
-                          <span className="flex items-center gap-3"><Search size={14} className="text-slate-500" /> {s}</span>
-                          <ArrowRight size={14} className="text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span className="flex items-center gap-3 font-medium"><Search size={14} className="text-[#A0AEC0]" /> {s}</span>
+                          <ArrowRight size={14} className="text-[#A0AEC0] opacity-0 group-hover:opacity-100 transition-opacity" />
                         </button>
                       ))}
                     </div>
@@ -143,7 +143,7 @@ export const KnowledgeSearch = ({ onClose }: { onClose: () => void }) => {
                 )}
                 
                 <div>
-                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 mb-2 flex items-center gap-2">
+                   <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider px-2 mb-2 flex items-center gap-2">
                       <BrainCircuit size={12} /> Suggested
                     </h3>
                     <div className="flex flex-wrap gap-2 px-2">
@@ -164,7 +164,7 @@ export const KnowledgeSearch = ({ onClose }: { onClose: () => void }) => {
 const SuggestedPill = ({ text, onClick }: { text: string, onClick: () => void }) => (
   <button 
     onClick={onClick}
-    className="px-3 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs font-medium transition-colors"
+    className="px-3 py-1.5 rounded-full border border-[#6C5CE7]/20 bg-[#F0E6FF] hover:bg-[#6C5CE7] hover:text-white text-[#6C5CE7] text-xs font-bold transition-colors"
   >
     {text}
   </button>

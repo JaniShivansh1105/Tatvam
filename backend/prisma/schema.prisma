@@ -34,6 +34,20 @@ model User {
   emailVerified  Boolean       @default(false)
   accountStatus  AccountStatus @default(ACTIVE)
 
+  // Identity & Auth Extensions
+  accountType                    String    @default("STUDENT") // "STUDENT" | "PARENT"
+  countryCode                    String?
+  mobileNumber                   String?
+  termsAccepted                  Boolean   @default(false)
+  termsAcceptedAt                DateTime?
+  privacyAcceptedAt              DateTime?
+  parentResponsibilitiesAcceptedAt DateTime?
+
+  // Onboarding & Profile Completion
+  onboardingCompleted Boolean @default(false)
+  onboardingStep      String? // Tracks progress e.g., "PERSONAL_DETAILS", "ACADEMIC_DETAILS"
+  profileCompletion   Int     @default(0) // Percentage 0-100
+
   profile    Profile?
   preference UserPreference?
   sessions   Session[]
@@ -56,6 +70,7 @@ model User {
   studyPlans    StudyPlan[]
   practiceSets  PracticeSet[]
   userBadges    UserBadge[]
+  userSubjects  UserSubject[]
 
   knowledgeCollections KnowledgeCollection[]
   educationalArtifacts EducationalArtifact[]
@@ -82,6 +97,29 @@ model Profile {
   points      Int       @default(0)
   xp          Int       @default(0)
 
+  // Student Specific
+  gender           String?
+  board            String?
+  medium           String?
+  gradeClass       String?
+  stream           String?
+  schoolName       String?
+  preferredLanguage String?
+
+  // Parent Specific
+  parentName       String?
+  relationship     String?
+  phone            String?
+  alternatePhone   String?
+  occupation       String?
+
+  // Optional Details
+  alternateEmail   String?
+  emergencyContact String?
+  socialLinks      Json?
+  learningInterests String[]
+  careerGoal       String?
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
@@ -93,12 +131,13 @@ model Profile {
 model UserPreference {
   id                   String  @id @default(uuid()) @db.Uuid
   userId               String  @unique @db.Uuid
-  preferredLanguageId  String  @db.Uuid
+  preferredLanguageId  String? @db.Uuid
   theme                Theme   @default(SYSTEM)
+  accentColor          String  @default("#6C5CE7")
   notificationsEnabled Boolean @default(true)
 
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  language Language @relation(fields: [preferredLanguageId], references: [id], onDelete: Restrict)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language Language? @relation(fields: [preferredLanguageId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -158,6 +197,20 @@ model Subject {
   updatedAt DateTime @updatedAt
 
   @@map("subjects")
+}
+
+model UserSubject {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  name      String
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@map("user_subjects")
 }
 
 model Lesson {

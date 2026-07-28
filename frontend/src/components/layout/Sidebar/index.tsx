@@ -82,17 +82,8 @@ export function Sidebar() {
         ))}
       </div>
 
-      {/* User Avatar Footer Card */}
+      {/* Footer Actions */}
       <div className="p-3 shrink-0 border-t border-[rgba(108,92,231,0.06)]">
-        {!isSidebarCollapsed && (
-          <Link href="/dashboard/profile" className="flex items-center gap-3 px-3 py-2.5 rounded-2xl hover:bg-[#F8F9FF] transition-colors mb-1 group">
-            <UserAvatar name={user?.fullName} email={user?.email} userId={user?.id} size="sm" />
-            <div className="flex flex-col min-w-0">
-              <span className="text-[13px] font-bold text-[#1B1D35] truncate group-hover:text-[#6C5CE7] transition-colors">{user?.fullName || "Student User"}</span>
-              <span className="text-[11px] text-[#A0AEC0] truncate">{user?.email || ""}</span>
-            </div>
-          </Link>
-        )}
         <button
           onClick={handleLogout}
           className={cn(

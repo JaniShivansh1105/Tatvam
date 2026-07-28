@@ -5,9 +5,8 @@ import {
   Map, 
   RefreshCcw, 
   CheckSquare, 
-  Award, 
-  User, 
-  Settings 
+  Settings,
+  User
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROUTES } from "@/config/routes";
@@ -34,8 +33,13 @@ export const navigationConfig: NavGroup[] = [
     label: "Learning",
     items: [
       { name: "Learn", href: ROUTES.DASHBOARD.LEARN, icon: BookOpen },
-      { name: "AI Mentor", href: ROUTES.DASHBOARD.MENTOR, icon: BrainCircuit },
       { name: "Study Plans", href: ROUTES.DASHBOARD.PLANS, icon: Map },
+    ]
+  },
+  {
+    label: "Intelligence",
+    items: [
+      { name: "AI Mentor", href: "/dashboard/mentor", icon: BrainCircuit },
     ]
   },
   {
@@ -43,13 +47,12 @@ export const navigationConfig: NavGroup[] = [
     items: [
       { name: "Practice", href: ROUTES.DASHBOARD.PRACTICE, icon: RefreshCcw },
       { name: "Assessments", href: ROUTES.DASHBOARD.ASSESSMENTS, icon: CheckSquare },
-      { name: "Achievements", href: ROUTES.DASHBOARD.ACHIEVEMENTS, icon: Award },
     ]
   },
   {
     label: "Account",
     items: [
-      { name: "Profile", href: ROUTES.DASHBOARD.PROFILE, icon: User },
+      { name: "Profile", href: "/dashboard/profile", icon: User },
       { name: "Settings", href: ROUTES.DASHBOARD.SETTINGS, icon: Settings },
     ]
   }

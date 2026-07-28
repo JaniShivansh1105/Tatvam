@@ -1,6 +1,6 @@
-import { IKnowledgeRepository, IEmbeddingProvider, IVectorRepository } from "../../domain/interfaces/knowledge/knowledge.interface.js";
-import { IEventBus } from "../events/event-bus.js";
 import { DomainEvents } from "../events/domain-events.js";
+import { IEventBus } from "../events/event-bus.js";
+import { IKnowledgeRepository, IEmbeddingProvider, IVectorRepository } from "../../domain/interfaces/knowledge/knowledge.interface.js";
 import { SemanticChunker, SemanticChunk } from "./semantic-chunker.js";
 import { Logger } from "../observability/logger.js";
 import { randomBytes } from "crypto";

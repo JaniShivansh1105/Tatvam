@@ -1,5 +1,4 @@
 import { prisma } from "../../prisma.js";
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
 import { IArtifactRepository } from "../../../domain/interfaces/study-tools/artifact.repository.interface.js";
 
 export class ArtifactRepository implements IArtifactRepository {

@@ -35,13 +35,17 @@ const safeUserSelect = {
   avatarUrl: true,
   emailVerified: true,
   accountStatus: true,
+  accountType: true,
+  onboardingCompleted: true,
+  onboardingStep: true,
+  profileCompletion: true,
   createdAt: true,
   updatedAt: true,
 };
 
 export class AuthService {
   async register(data: RegisterData, sessionInfo: SessionInfo) {
-    const { email, password, fullName, username } = data;
+    const { email, password, fullName, username, accountType, countryCode, mobileNumber, termsAccepted } = data;
 
     // 1. Perform reads outside the transaction
     const existingUser = await prisma.user.findFirst({
@@ -56,6 +60,16 @@ export class AuthService {
         throw new ConflictError("Email is already in use");
       }
       throw new ConflictError("Username is already in use");
+    }
+
+    if (mobileNumber) {
+      const existingMobile = await prisma.user.findFirst({
+        where: { mobileNumber },
+        select: { mobileNumber: true },
+      });
+      if (existingMobile) {
+        throw new ConflictError("Mobile number is already in use");
+      }
     }
 
     // 2. Perform expensive hashing and token generation outside the transaction
@@ -90,6 +104,11 @@ export class AuthService {
         username,
         fullName,
         hashedPassword: hashedPw,
+        accountType,
+        countryCode,
+        mobileNumber,
+        termsAccepted,
+        termsAcceptedAt: termsAccepted ? new Date() : null,
         profile: {
           create: {},
         },
@@ -101,7 +120,7 @@ export class AuthService {
         sessions: {
           create: {
             hashedRefreshToken,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days
             userAgent: sessionInfo.userAgent,
             ipAddress: sessionInfo.ipAddress,
           },
@@ -136,6 +155,7 @@ export class AuthService {
           },
         },
         learningDNA: true,
+        userSubjects: true,
       },
     });
 
@@ -160,7 +180,7 @@ export class AuthService {
       data: {
         userId: user.id,
         hashedRefreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + (data.keepMeSignedIn ? 15 : 1) * 24 * 60 * 60 * 1000), // 15 days or 1 day for session
         userAgent: sessionInfo.userAgent,
         ipAddress: sessionInfo.ipAddress,
       },
@@ -210,7 +230,7 @@ export class AuthService {
       where: { id: currentSession.id },
       data: {
         hashedRefreshToken: newHashedRefreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         updatedAt: new Date(),
         userAgent: sessionInfo.userAgent || currentSession.userAgent,
         ipAddress: sessionInfo.ipAddress || currentSession.ipAddress,
@@ -248,7 +268,7 @@ export class AuthService {
       });
     }
     
-    return true;
+    return;
   }
 
   async getMe(userId: string) {
@@ -263,6 +283,7 @@ export class AuthService {
           }
         },
         learningDNA: true,
+        userSubjects: true,
       },
     });
 
@@ -273,13 +294,16 @@ export class AuthService {
     return user;
   }
 
-  async updatePreferences(userId: string, data: { preferredLanguageName?: string; notificationsEnabled?: boolean; theme?: string }) {
+  async updatePreferences(userId: string, data: { preferredLanguageName?: string; notificationsEnabled?: boolean; theme?: string; accentColor?: string }) {
     const updateData: any = {};
     if (data.notificationsEnabled !== undefined) {
       updateData.notificationsEnabled = data.notificationsEnabled;
     }
     if (data.theme) {
       updateData.theme = data.theme.toUpperCase();
+    }
+    if (data.accentColor) {
+      updateData.accentColor = data.accentColor;
     }
 
     if (data.preferredLanguageName) {
@@ -343,9 +367,9 @@ export class AuthService {
       attempts: 0,
     });
 
-    await EmailService.sendOTP(email, otp);
+    await new EmailService({} as any).sendOTP(email, otp);
 
-    return true;
+    return;
   }
 
   async verifyOTP(email: string, otp: string) {
@@ -427,7 +451,7 @@ export class AuthService {
       })
     ]);
 
-    return true;
+    return;
   }
 
   async updateProfile(userId: string, data: { fullName?: string; bio?: string; country?: string; timezone?: string; dna?: any }) {
@@ -479,7 +503,111 @@ export class AuthService {
       });
     }
 
+    // Dynamic completion calculation could be done here, but usually read on getMe.
     return this.getMe(userId);
+  }
+
+  async updateOnboarding(userId: string, data: any) {
+    const { onboardingStep, onboardingCompleted, ...profileData } = data;
+    
+    if (onboardingStep !== undefined || onboardingCompleted !== undefined) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(onboardingStep !== undefined && { onboardingStep }),
+          ...(onboardingCompleted !== undefined && { onboardingCompleted }),
+        }
+      });
+    }
+
+    if (Object.keys(profileData).length > 0) {
+      // Split user specific and profile specific fields
+      const { fullName, email, ...restProfile } = profileData;
+      if (fullName || email) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            ...(fullName && { fullName }),
+            ...(email && { email }),
+          }
+        });
+      }
+      
+      if (Object.keys(restProfile).length > 0) {
+         await prisma.profile.upsert({
+           where: { userId },
+           create: { userId, ...restProfile },
+           update: { ...restProfile }
+         });
+      }
+    }
+
+    // Recalculate profileCompletion
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true }
+    });
+
+    if (updatedUser) {
+      let filled = 0;
+      let total = 0;
+      let optFilled = 0;
+      
+      const optional = ["bio", "avatarUrl", "alternateEmail", "emergencyContact", "socialLinks", "learningInterests", "careerGoal"];
+      optional.forEach(f => {
+        if (updatedUser.profile?.[f as keyof typeof updatedUser.profile] || (updatedUser as any)[f]) optFilled++;
+      });
+      
+      if (updatedUser.accountType === "STUDENT") {
+        const required = ["dateOfBirth", "gender", "state", "city", "board", "medium", "gradeClass", "preferredLanguage"];
+        total = required.length;
+        required.forEach(f => {
+          if (updatedUser.profile?.[f as keyof typeof updatedUser.profile] || (updatedUser as any)[f]) filled++;
+        });
+      } else {
+        const required = ["parentName", "relationship", "phone", "city", "state", "preferredLanguage"];
+        total = required.length;
+        required.forEach(f => {
+          if (updatedUser.profile?.[f as keyof typeof updatedUser.profile] || (updatedUser as any)[f]) filled++;
+        });
+      }
+      
+      const mandatoryPercent = total > 0 ? (filled / total) * 80 : 0;
+      const optPercent = optional.length > 0 ? (optFilled / optional.length) * 20 : 0;
+      const completion = Math.round(mandatoryPercent + optPercent);
+      
+      await prisma.user.update({
+        where: { id: userId },
+        data: { profileCompletion: completion }
+      });
+    }
+
+    return this.getMe(userId);
+  }
+
+  async addSubject(userId: string, name: string) {
+    await prisma.userSubject.upsert({
+      where: {
+        userId_name: { userId, name }
+      },
+      create: { userId, name },
+      update: {}
+    });
+    return prisma.userSubject.findMany({ where: { userId } });
+  }
+
+  async removeSubject(userId: string, subjectId: string) {
+    // Security: verify ownership before delete to prevent cross-user data leakage
+    const subject = await prisma.userSubject.findFirst({
+      where: { id: subjectId, userId },
+    });
+    if (!subject) {
+      throw new NotFoundError("Subject not found");
+    }
+    await prisma.userSubject.delete({
+      where: { id: subjectId }
+    });
+    return prisma.userSubject.findMany({ where: { userId } });
   }
 }
 

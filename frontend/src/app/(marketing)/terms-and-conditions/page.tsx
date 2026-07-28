@@ -1,25 +1,96 @@
-import React from "react";
-import { Navbar } from "@/components/marketing/Navbar";
-import { Footer } from "@/components/marketing/Footer";
-import { MarketingContainer } from "@/components/marketing/shared/MarketingContainer";
+"use client";
 
-export default function TermsConditionsPage() {
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { ROUTES } from "@/config/routes";
+import { motion } from "framer-motion";
+
+export default function TermsAndConditionsPage() {
   return (
-    <>
-      <Navbar />
-      <div className="pt-32 pb-24 min-h-screen">
-        <MarketingContainer>
-          <div className="max-w-3xl mx-auto bg-white p-8 md:p-12 rounded-[24px] shadow-sm border border-[rgba(108,92,231,0.08)] prose prose-slate">
-            <h1 className="text-[32px] font-extrabold text-[#1B1D35] mb-8">Terms & Conditions</h1>
-            <p className="text-[#6B7280]">Last updated: {new Date().toLocaleDateString()}</p>
-            <p className="text-[#6B7280] mt-4">
-              This is a placeholder for the Tatvam Terms and Conditions. 
-              By using this service, you agree to our standard terms of educational software usage.
-            </p>
-          </div>
-        </MarketingContainer>
+    <div className="min-h-screen bg-[#F8F9FF] text-[#1B1D35] selection:bg-[#6C5CE7]/20 relative overflow-hidden">
+      {/* BACKGROUND BLOBS */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <motion.div 
+          animate={{ x: [0, -50, 0], y: [0, 30, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-[10%] -left-[5%] w-[45vw] h-[45vw] rounded-full bg-[#E5E1FF] blur-[100px] opacity-60 mix-blend-multiply" 
+        />
+        <motion.div 
+          animate={{ x: [0, 40, 0], y: [0, -50, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[20%] -right-[10%] w-[40vw] h-[40vw] rounded-full bg-[#BFFFF0] blur-[120px] opacity-40 mix-blend-multiply" 
+        />
       </div>
-      <Footer />
-    </>
+
+      <div className="relative z-10 max-w-4xl mx-auto px-6 py-16 md:py-24">
+        <Link 
+          href={ROUTES.HOME} 
+          className="inline-flex items-center gap-2 px-4 py-2 mb-10 rounded-full bg-white/60 backdrop-blur-md border border-white/80 shadow-sm text-[#6B7280] hover:text-[#1B1D35] hover:bg-white transition-all group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-medium text-sm">Back to Home</span>
+        </Link>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-white/80 backdrop-blur-xl border border-white p-8 md:p-12 rounded-[32px] shadow-[0_20px_40px_-15px_rgba(108,92,231,0.05)]"
+        >
+          <h1 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4 text-[#1B1D35]">Terms and Conditions</h1>
+          <p className="text-[#6B7280] mb-12">Last updated: {new Date().toLocaleDateString()}</p>
+          
+          <div className="prose prose-slate max-w-none prose-headings:text-[#1B1D35] prose-headings:font-medium prose-p:text-[#4A5568] prose-p:leading-relaxed prose-li:text-[#4A5568]">
+            <section className="mb-10">
+              <h2>1. Agreement to Terms</h2>
+              <p>
+                These Terms and Conditions constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and Tatvam ("we," "us" or "our"), concerning your access to and use of the Tatvam website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site").
+              </p>
+            </section>
+
+            <section className="mb-10">
+              <h2>2. Intellectual Property Rights</h2>
+              <p>
+                Unless otherwise indicated, the Site is our proprietary property and all source code, databases, functionality, software, website designs, audio, video, text, photographs, and graphics on the Site (collectively, the "Content") and the trademarks, service marks, and logos contained therein (the "Marks") are owned or controlled by us or licensed to us, and are protected by copyright and trademark laws.
+              </p>
+            </section>
+
+            <section className="mb-10">
+              <h2>3. User Representations</h2>
+              <p>By using the Site, you represent and warrant that:</p>
+              <ul>
+                <li>All registration information you submit will be true, accurate, current, and complete.</li>
+                <li>You will maintain the accuracy of such information and promptly update such registration information as necessary.</li>
+                <li>You have the legal capacity and you agree to comply with these Terms and Conditions.</li>
+                <li>You are not under the age of 13. If you are a minor, you must have your parent or guardian's permission to use the Site.</li>
+                <li>You will not access the Site through automated or non-human means, whether through a bot, script or otherwise.</li>
+                <li>You will not use the Site for any illegal or unauthorized purpose.</li>
+              </ul>
+            </section>
+
+            <section className="mb-10">
+              <h2>4. AI Mentor and Learning Content</h2>
+              <p>
+                The content generated by our AI Mentor and adaptive learning systems is intended for educational purposes only. While we strive for accuracy, we do not guarantee the completeness or absolute correctness of every AI-generated response. The service should be used as a supplementary educational tool and not as a replacement for formal education or professional advice.
+              </p>
+            </section>
+
+            <section className="mb-10">
+              <h2>5. Account Suspension and Termination</h2>
+              <p>
+                We reserve the right to suspend or terminate your account and refuse any and all current or future use of the Site if you provide any information that is untrue, inaccurate, not current, or incomplete, or if you violate any of these Terms and Conditions.
+              </p>
+            </section>
+
+            <section>
+              <h2>6. Contact Us</h2>
+              <p>
+                In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at support@tatvam.ai.
+              </p>
+            </section>
+          </div>
+        </motion.div>
+      </div>
+    </div>
   );
 }

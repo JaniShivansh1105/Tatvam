@@ -1,12 +1,15 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../../domain/interfaces/repositories.interface.js";
+import { IAIService } from "../../../domain/interfaces/services.interface.js";
+import { IContentRepository, IChatRepository } from "../../../domain/interfaces/repositories.interface.js";
 import { IEventBus } from "../../events/event-bus.js";
-import { DomainEvents } from "../../events/domain-events.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../../domain/interfaces/services.interface.js";
 import { prisma } from "../../../data/prisma.js";
 import { AIOrchestrator } from "./ai.orchestrator.js";
 
-export class AIService implements IAIService {
-  constructor(private readonly chatRepo: IChatRepository, private readonly contentRepo: IContentRepository, private readonly eventBus: IEventBus) {}
+export class AIService {
+  private readonly orchestrator: AIOrchestrator;
+  constructor(private readonly chatRepo: IChatRepository, private readonly contentRepo: IContentRepository, private readonly _ctxBuilder: any, private readonly eventBus: IEventBus) {
+    this.orchestrator = new AIOrchestrator(eventBus);
+  }
+
   async *chatStream(userId: string, messages: any[], context: Record<string, any>, _provider: string = "gemini") {
     const lessonId = context.lessonId as string | undefined;
 
@@ -106,13 +109,10 @@ Adapt your explanation length and detail level according to these preferences.`;
           providerManager.reportFailure(providerName, classification);
           
           if (firstChunkReceived) {
-            // Can't seamlessly switch providers if we already yielded chunks to the user.
-            // Just yield an apology and break.
             yield "\n\n[Connection lost. Please try asking again.]";
-            success = true; // Technically handled it, don't trigger the total fallback
+            success = true;
             break; 
           }
-          // If no chunks received yet, loop continues to the next provider automatically!
         }
       }
 
@@ -128,10 +128,15 @@ Adapt your explanation length and detail level according to these preferences.`;
             content: fullAssistantResponse,
           },
         });
+        
+        const { DomainEvents } = await import("../../events/domain-events.js");
+        await this.eventBus.publish(DomainEvents.ConversationCompleted, { 
+          userId, lessonId, sessionId: session.id 
+        });
       }
     } catch (error) {
       console.error("[AIService ChatStream Total Exhaustion Error]", error);
-      yield "We've temporarily reached today's AI capacity across all available providers. Your conversations are safely saved. Please try again later. We'll be ready to help as soon as AI services become available.";
+      yield "We've temporarily reached today's AI capacity across all available providers. Your conversations are safely saved. Please try again later.";
     }
   }
 
@@ -158,15 +163,15 @@ Adapt your explanation length and detail level according to these preferences.`;
 
   async generateStudyPlanTasks(userId: string, type: string) {
     const lessons = await prisma.lesson.findMany({ orderBy: { order: "asc" } });
-    return AIOrchestrator.execute("studyPlan", userId, { type, lessons });
+    return this.orchestrator.execute("studyPlan", userId, { type, lessons });
   }
 
   async generatePracticeQuestions(userId: string, lessonId: string | null, type: string, difficulty: string) {
-    return AIOrchestrator.execute("practice", userId, { lessonId, type, difficulty });
+    return this.orchestrator.execute("practice", userId, { lessonId, type, difficulty });
   }
 
   async generateDashboardRecommendations(userId: string, stats: any, nextLesson: any) {
-    return AIOrchestrator.execute("recommendation", userId, { stats, nextLesson });
+    return this.orchestrator.execute("recommendation", userId, { stats, nextLesson });
   }
 
   async generateStudyArtifact(prompt: string): Promise<any> { return {}; }

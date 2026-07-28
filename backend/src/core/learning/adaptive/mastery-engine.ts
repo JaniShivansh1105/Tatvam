@@ -1,5 +1,5 @@
-import { IEventBus } from "../../../core/events/event-bus.js";
-import { DomainEvents } from "../../../core/events/domain-events.js";
+import { DomainEvents } from "../../events/domain-events.js";
+import { IEventBus } from "../../events/event-bus.js";
 
 export class MasteryEngine {
   constructor(private readonly eventBus: IEventBus) {}

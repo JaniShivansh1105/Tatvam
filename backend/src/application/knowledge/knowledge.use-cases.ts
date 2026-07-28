@@ -1,13 +1,6 @@
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IEventBus } from "../../core/events/event-bus.js";
-import { DomainEvents } from "../../core/events/domain-events.js";
-import { IAuthRepository, IWorkspaceRepository, IProgressRepository, IContentRepository, IChatRepository, IPlansRepository, IPracticeRepository } from "../../domain/interfaces/repositories.interface.js";
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IEventBus } from "../../core/events/event-bus.js";
-import { DomainEvents } from "../../core/events/domain-events.js";
 import { IKnowledgeRepository } from "../../domain/interfaces/knowledge/knowledge.interface.js";
 import { DocumentPipeline } from "../../core/knowledge/document-pipeline.js";
+import { IDocumentPipeline } from "../../domain/interfaces/core.interface.js";
 
 export class CreateKnowledgeCollectionUseCase {
   constructor(private readonly knowledgeRepo: IKnowledgeRepository) {}

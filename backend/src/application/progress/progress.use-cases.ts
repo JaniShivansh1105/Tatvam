@@ -1,5 +1,4 @@
-import { IAuthService, IWorkspaceService, IProgressService, IContentService, IAIService } from "../../domain/interfaces/services.interface.js";
-import { IPlansRepository, IPracticeRepository, IChatRepository, IKnowledgeRepository, IArtifactRepository, IProgressRepository } from "../../domain/interfaces/repositories.interface.js";
+import { IProgressService } from "../../domain/interfaces/services.interface.js";
 import { IEventBus } from "../../core/events/event-bus.js";
 import { IDocumentPipeline, IMasteryEngine, IDNAEvolutionEngine, IRecommendationEngine } from "../../domain/interfaces/core.interface.js";
 import { ProgressService } from "../../core/services/progress/progress.service.js";
