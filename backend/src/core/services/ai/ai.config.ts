@@ -1,6 +1,6 @@
 import { AIConfig, ProviderName } from "./ai.types.js";
 
-type AIFeatureName = "mentor" | "studyPlan" | "practice" | "recommendation" | "flashcard";
+type AIFeatureName = "mentor" | "studyPlan" | "practice" | "recommendation" | "flashcard" | "artifact";
 
 export const AI_PROVIDER_PRIORITY: ProviderName[] = (process.env.AI_PROVIDER_PRIORITY || "gemini,gpt,grok")
   .split(",")
@@ -66,5 +66,17 @@ export const AI_FEATURES: Record<AIFeatureName, AIConfig> = {
     maxTokens: 2048,
     retryPolicy: { maxRetries: 1, backoffMs: 1000 },
     timeoutMs: 15000,
+  },
+  artifact: {
+    provider: (process.env.AI_PRIMARY_PROVIDER as AIConfig["provider"]) || AI_PROVIDER_PRIORITY[0] || "gemini",
+    models: {
+      gemini: "gemini-3.5-flash-lite",
+      gpt: "gpt-4o-mini",
+      grok: "grok-2-latest"
+    },
+    temperature: 0.4,
+    maxTokens: 4096,
+    retryPolicy: { maxRetries: 2, backoffMs: 1500 },
+    timeoutMs: 45000,
   }
 };
