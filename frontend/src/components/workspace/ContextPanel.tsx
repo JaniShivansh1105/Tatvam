@@ -31,12 +31,6 @@ export const ContextPanel = () => {
           icon={<FileText size={16} />}
           label="Artifacts"
         />
-        <TabButton 
-          active={activeRightPanel === 'progress'} 
-          onClick={() => setActiveRightPanel('progress')}
-          icon={<Zap size={16} />}
-          label="Progress"
-        />
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
@@ -49,11 +43,6 @@ export const ContextPanel = () => {
           {activeRightPanel === 'artifacts' && (
             <motion.div key="artifacts" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <ArtifactsView />
-            </motion.div>
-          )}
-          {activeRightPanel === 'progress' && (
-            <motion.div key="progress" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-              <ProgressView />
             </motion.div>
           )}
         </AnimatePresence>
@@ -186,35 +175,6 @@ const ArtifactsView = () => {
           <ArtifactCard key={art.id} artifact={art} />
         ))
       )}
-    </div>
-  );
-};
-
-const ProgressView = () => {
-  const { recentMasteryChanges } = useProgressStore();
-  
-  return (
-    <div className="space-y-4">
-      <ProgressCard />
-      
-      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm mt-4 hover:shadow-md transition-shadow">
-        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Activity size={14} className="text-[#38A169]" /> Recent Mastery
-        </h3>
-        <div className="space-y-3">
-          {recentMasteryChanges.map((change, i) => (
-            <div key={i} className="flex items-center justify-between">
-              <span className="text-[13px] font-bold text-[#1B1D35]">{change.concept}</span>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-[#718096]">{Math.round(change.masteryLevel * 100)}%</span>
-                <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${change.recentDelta > 0 ? 'text-[#38A169] bg-[#F0FFF4] border-[#C6F6D5]' : 'text-[#E53E3E] bg-[#FFF5F5] border-[#FED7D7]'}`}>
-                  {change.recentDelta > 0 ? '+' : ''}{Math.round(change.recentDelta * 100)}%
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };

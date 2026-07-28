@@ -44,8 +44,6 @@ export const navigationConfig: NavGroup[] = [
     label: "INTELLIGENCE",
     items: [
       { name: "AI Mentor", href: "/dashboard/mentor", icon: BrainCircuit },
-      { name: "Knowledge", href: "/workspace/knowledge", icon: Database },
-      { name: "Resources", href: "/workspace/resources", icon: FolderOpen },
     ]
   },
   {

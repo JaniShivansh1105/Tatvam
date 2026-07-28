@@ -20,13 +20,18 @@ export default function MentorPage() {
   
   const { isRightPanelOpen } = useWorkspaceStore();
 
+  React.useEffect(() => {
+    // Force scroll to top on initial load to prevent browser scroll restoration
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleTabChange = (newTab: string) => {
     router.push(`${pathname}?tab=${newTab}`);
   };
 
   return (
     <PageContainer>
-      <ContentArea className="flex flex-col h-[calc(100vh-5rem)]">
+      <div className="flex-1 w-full px-4 lg:px-6 pb-4 pt-2 h-full min-h-0 flex flex-col">
         <div className="flex flex-col bg-white rounded-[24px] border border-[#E2E8F0] shadow-sm overflow-hidden h-full">
           {/* Unified Top Navigation for AI Mentor */}
           <div className="h-14 border-b border-[#E2E8F0] bg-[#F8F9FF] flex items-center px-4 shrink-0 shadow-sm z-10 gap-2">
@@ -101,7 +106,7 @@ export default function MentorPage() {
             )}
           </div>
         </div>
-      </ContentArea>
+      </div>
     </PageContainer>
   );
 }
