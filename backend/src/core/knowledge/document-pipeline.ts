@@ -21,7 +21,7 @@ export class DocumentPipeline {
     let documentId = "";
     
     try {
-      // 1. Registration
+      // 1. Registration (Synchronous)
       const document = await this.knowledgeRepo.createDocument({
         collectionId,
         title,
@@ -33,6 +33,20 @@ export class DocumentPipeline {
 
       await this.eventBus.publish(DomainEvents.DocumentUploaded, { documentId, collectionId });
 
+      // Run heavy processing asynchronously without awaiting
+      this._processDocumentBackground(documentId, collectionId, title, content, metadata, processingStart).catch(err => {
+        Logger.error("Background ingestion wrapper failed", err, { documentId });
+      });
+
+      return document;
+    } catch (error: any) {
+      Logger.error("Document registration failed", error);
+      throw error;
+    }
+  }
+
+  private async _processDocumentBackground(documentId: string, collectionId: string, title: string, content: string, metadata: any, processingStart: number) {
+    try {
       // 2. Versioning
       const versionHash = randomBytes(16).toString("hex"); // Simulate hash of content
       const version = await this.knowledgeRepo.createDocumentVersion({
@@ -44,19 +58,7 @@ export class DocumentPipeline {
       // 3. Extraction & Semantic Chunking
       const chunks: SemanticChunk[] = SemanticChunker.chunk(content, metadata);
       
-      // Save chunks to DB
-      const dbChunks = chunks.map(c => ({
-        versionId: version.id,
-        content: c.content,
-        chunkType: c.type,
-        metadata: c.metadata,
-        tokenCount: c.tokenEstimate
-      }));
-      
-      await this.knowledgeRepo.createDocumentChunks(dbChunks);
-      await this.eventBus.publish(DomainEvents.ChunksCreated, { documentId, count: chunks.length });
-
-      // 4. Embedding Generation
+      // Save chunks and Embeddings (Fixing UUID Cast bug)
       const embedStart = Date.now();
       const textsToEmbed = chunks.map(c => c.content);
       const embeddings = await this.embeddingProvider.embedBatch(textsToEmbed);
@@ -64,12 +66,23 @@ export class DocumentPipeline {
       
       await this.eventBus.publish(DomainEvents.EmbeddingsGenerated, { documentId, count: embeddings.length, embedDuration });
 
-      // 5. Vector Store Upsertion
       const vectorStart = Date.now();
+      const { prisma } = await import("../../data/prisma.js");
+      
       for (let i = 0; i < chunks.length; i++) {
-        // We use a pseudo-id for the vector since we didn't fetch the exact DB ids back from createMany
-        const chunkId = `${version.id}-chunk-${i}`; 
-        await this.vectorRepo.upsertVector(chunkId, documentId, collectionId, embeddings[i], chunks[i].metadata);
+        // 1. Create chunk
+        const createdChunk = await prisma.documentChunk.create({
+          data: {
+            versionId: version.id,
+            content: chunks[i].content,
+            chunkType: chunks[i].type,
+            metadata: chunks[i].metadata as any,
+            tokenCount: chunks[i].tokenEstimate
+          }
+        });
+        
+        // 2. Upsert Vector using correct UUID
+        await this.vectorRepo.upsertVector(createdChunk.id, documentId, collectionId, embeddings[i], chunks[i].metadata);
       }
       const vectorDuration = Date.now() - vectorStart;
 
@@ -87,14 +100,9 @@ export class DocumentPipeline {
       });
 
       await this.eventBus.publish(DomainEvents.KnowledgeIndexed, { documentId, totalDuration });
-
-      return document;
     } catch (error: any) {
-      if (documentId) {
-        await this.knowledgeRepo.updateDocumentStatus(documentId, "failed");
-      }
-      Logger.error("Document ingestion failed", error, { documentId });
-      throw error;
+      await this.knowledgeRepo.updateDocumentStatus(documentId, "failed");
+      Logger.error("Document ingestion background processing failed", error, { documentId });
     }
   }
 }
