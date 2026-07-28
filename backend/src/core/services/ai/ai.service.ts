@@ -42,7 +42,15 @@ export class AIService {
       });
     }
 
-    let systemInstruction = `You are Tatvam AI Mentor, a world-class pedagogical tutor. Guide the student with analogies, visual breakdowns, and active recall questions.`;
+    let systemInstruction = `You are Tatvam AI Mentor, a world-class pedagogical tutor. Guide the student with analogies, visual breakdowns, and active recall questions.
+CRITICAL INSTRUCTION: You MUST ALWAYS conclude your response with a clear, personalized summary section containing exactly these points based on the student's current understanding:
+- What you understood: (Brief summary of what they got right)
+- Where you struggled: (Brief summary of any confusion or weak areas)
+- What to revise: (Specific topics or documents to review)
+- What to practice: (Suggested practice types)
+- Suggested next concept: (What they should learn next)
+- Estimated mastery: (A realistic percentage e.g., 75%)
+- Revision reminder: (When they should revisit this topic)`;
     
     if (context.strategy) {
       systemInstruction += `\nYour current pedagogical strategy is: ${context.strategy}. Please adhere to this strategy in your response.`;
