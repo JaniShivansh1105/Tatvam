@@ -67,6 +67,10 @@ export class AIOrchestrator {
         throw new Error(`Unsupported feature for Orchestrator: ${feature}`);
     }
 
+    // Apply Global Multilingual Foundation
+    const { AIPromptBuilder } = await import("./prompt-builder.js");
+    promptText = AIPromptBuilder.build(promptText, context);
+
     // 4. Router & Provider Execution
     let rawResponse: any;
     let validationResult: "success" | "failure" = "failure";

@@ -107,6 +107,8 @@ model Profile {
   stream           String?
   schoolName       String?
   preferredLanguage String?
+  nativeLanguage    String?
+  secondaryLanguage String?
 
   // Parent Specific
   parentName       String?

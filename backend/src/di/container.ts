@@ -136,11 +136,11 @@ export const getTimelineUseCase = new GetTimelineUseCase(progressService, eventB
 
 // AI
 export const chatStreamUseCase = new ChatStreamUseCase(aiService, eventBus);
-export const getHistoryUseCase = new GetHistoryUseCase(chatRepo, eventBus);
+export const getHistoryUseCase = new GetHistoryUseCase(aiService, eventBus);
 export const createConversationUseCase = new CreateConversationUseCase(chatRepo, eventBus);
-export const renameConversationUseCase = new RenameConversationUseCase(chatRepo, eventBus);
+export const renameConversationUseCase = new RenameConversationUseCase(aiService, eventBus);
 export const archiveConversationUseCase = new ArchiveConversationUseCase(chatRepo, eventBus);
-export const deleteConversationUseCase = new DeleteConversationUseCase(chatRepo, eventBus);
+export const deleteConversationUseCase = new DeleteConversationUseCase(aiService, eventBus);
 export const restoreConversationUseCase = new RestoreConversationUseCase(chatRepo, eventBus);
 export const searchConversationUseCase = new SearchConversationUseCase(chatRepo, eventBus);
 export const getPinnedConversationsUseCase = new GetPinnedConversationsUseCase(chatRepo, eventBus);

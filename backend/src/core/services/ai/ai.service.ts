@@ -12,34 +12,49 @@ export class AIService {
 
   async *chatStream(userId: string, messages: any[], context: Record<string, any>, _provider: string = "gemini") {
     const lessonId = context.lessonId as string | undefined;
+    const sessionId = context.sessionId as string | undefined;
 
-    // Find or create an active chat session for this user + lesson
-    let session = await prisma.chatSession.findFirst({
-      where: { userId, lessonId, status: "active" },
-    });
+    const lastMessage = messages[messages.length - 1];
+    const userText = lastMessage?.text || lastMessage?.content || "Explain this concept";
+
+    // Find or create session
+    let session;
+    if (sessionId) {
+      session = await prisma.chatSession.findUnique({
+        where: { id: sessionId, userId }
+      });
+    }
 
     if (!session) {
+      // Create new session if none provided or not found
       session = await prisma.chatSession.create({
         data: {
           userId,
           lessonId,
-          title: "Mentor Session",
+          title: "New Conversation",
         },
       });
+      this.generateTitleBackground(userId, session.id, userText).catch(console.error);
     }
 
-    const lastMessage = messages[messages.length - 1];
-    const userText = lastMessage?.text || lastMessage?.content || "Explain this concept";
-    
+    // Yield session meta so frontend can track this session
+    yield `__META__:{"sessionId":"${session.id}"}`;
+
     // Save user message
     if (lastMessage && lastMessage.role === "user") {
-      await prisma.chatMessage.create({
-        data: {
-          chatSessionId: session.id,
-          role: "user",
-          content: userText,
-        },
-      });
+      await prisma.$transaction([
+        prisma.chatMessage.create({
+          data: {
+            chatSessionId: session.id,
+            role: "user",
+            content: userText,
+          },
+        }),
+        prisma.chatSession.update({
+          where: { id: session.id },
+          data: { updatedAt: new Date() }
+        })
+      ]);
     }
 
     let systemInstruction = `You are Tatvam AI Mentor, a world-class pedagogical tutor. Guide the student with analogies, visual breakdowns, and active recall questions.
@@ -111,6 +126,12 @@ Adapt your explanation length and detail level according to these preferences.`;
     if (historyContext) fullPrompt += `Previous Conversation:\n${historyContext}\n\n`;
     fullPrompt += `Student Question: ${userText}`;
 
+    // Apply Global Multilingual Foundation
+    const { aiContextBuilder } = await import("../../../di/container.js");
+    const aiContext = await aiContextBuilder.buildContext(userId, lessonId);
+    const { AIPromptBuilder } = await import("./prompt-builder.js");
+    fullPrompt = AIPromptBuilder.build(fullPrompt, aiContext);
+
     try {
       const availableProviders = (await import("./providers/provider.manager.js")).ProviderManager.getAvailableProviders(await import("./ai.config.js").then(m => m.AI_FEATURES.mentor));
       
@@ -161,13 +182,19 @@ Adapt your explanation length and detail level according to these preferences.`;
       }
 
       if (fullAssistantResponse) {
-        await prisma.chatMessage.create({
-          data: {
-            chatSessionId: session.id,
-            role: "assistant",
-            content: fullAssistantResponse,
-          },
-        });
+        await prisma.$transaction([
+          prisma.chatMessage.create({
+            data: {
+              chatSessionId: session.id,
+              role: "assistant",
+              content: fullAssistantResponse,
+            },
+          }),
+          prisma.chatSession.update({
+            where: { id: session.id },
+            data: { updatedAt: new Date() }
+          })
+        ]);
         
         const { DomainEvents } = await import("../../events/domain-events.js");
         await this.eventBus.publish(DomainEvents.ConversationCompleted, { 
@@ -244,6 +271,12 @@ ${ragContext}
 `;
 
     const userPrompt = `Generate a ${artifactType} for: ${requestContent}`;
+    
+    // Apply Global Multilingual Foundation
+    const { aiContextBuilder } = await import("../../../di/container.js");
+    const aiContext = await aiContextBuilder.buildContext(userId, lessonId);
+    const { AIPromptBuilder } = await import("./prompt-builder.js");
+    const finalPrompt = AIPromptBuilder.build(`${systemPrompt}\n\n${userPrompt}`, aiContext);
 
     const availableProviders = (await import("./providers/provider.manager.js")).ProviderManager.getAvailableProviders(await import("./ai.config.js").then(m => m.AI_FEATURES.artifact));
     
@@ -257,7 +290,7 @@ ${ragContext}
     for (const providerName of availableProviders) {
        try {
          const provider = ProviderRegistry.getProvider(providerName);
-         const response = await provider.generateJSON(`${systemPrompt}\n\n${userPrompt}`, config);
+         const response = await provider.generateJSON(finalPrompt, config);
          // If provider.generateJSON returns an object directly, we don't need to JSON.parse it if it's already parsed
          // But if it returns string, we parse. Let's just return response directly assuming it returns parsed JSON, or we check type.
          return typeof response === 'string' ? JSON.parse(response.replace(/```json/g, '').replace(/```/g, '').trim()) : response;
@@ -268,4 +301,54 @@ ${ragContext}
     }
     throw new Error("All AI providers exhausted for generateStudyArtifact.");
   }
+
+  async updateSession(userId: string, sessionId: string, data: { title?: string; isPinned?: boolean }) {
+    return prisma.chatSession.update({
+      where: { id: sessionId, userId },
+      data,
+    });
+  }
+
+  async deleteSession(userId: string, sessionId: string) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Delete all artifacts linked to this conversation (which covers bookmarks, notes, quizzes, flashcards, etc. saved from AI)
+      await tx.educationalArtifact.deleteMany({
+        where: { ownerId: userId, sourceConversationId: sessionId }
+      });
+      
+      // 2. Delete the conversation (messages are cascade deleted)
+      await tx.chatSession.delete({
+        where: { id: sessionId, userId }
+      });
+    });
+  }
+
+  private async generateTitleBackground(userId: string, sessionId: string, firstMessage: string) {
+    try {
+      const config = await import("./ai.config.js").then(m => m.AI_FEATURES.mentor);
+      const availableProviders = (await import("./providers/provider.manager.js")).ProviderManager.getAvailableProviders(config);
+      if (availableProviders.length === 0) return;
+      const { ProviderRegistry } = await import("./providers/provider.registry.js");
+      const provider = ProviderRegistry.getProvider(availableProviders[0]);
+      
+      const prompt = `Generate a concise title (maximum 40 characters) for this user query. Only return the title itself, without quotes or additional text.\n\nUser Query: ${firstMessage}`;
+      const responseStream = provider.generateStream(prompt, config);
+      
+      let title = "";
+      for await (const chunk of responseStream) {
+        title += chunk;
+      }
+      
+      title = title.trim().replace(/^["']|["']$/g, '');
+      if (title.length > 40) title = title.substring(0, 37) + "...";
+      
+      await prisma.chatSession.update({
+        where: { id: sessionId },
+        data: { title }
+      });
+    } catch (error) {
+      console.error("[AIService] Failed to generate title:", error);
+    }
+  }
+
 }

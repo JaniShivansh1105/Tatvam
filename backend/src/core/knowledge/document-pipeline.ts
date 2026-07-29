@@ -46,8 +46,12 @@ export class DocumentPipeline {
   }
 
   private async _processDocumentBackground(documentId: string, collectionId: string, title: string, content: string, metadata: any, processingStart: number) {
+    let currentStage = "Uploading";
+    
     try {
       // 2. Versioning
+      currentStage = "Extracting Text";
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
       const versionHash = randomBytes(16).toString("hex"); // Simulate hash of content
       const version = await this.knowledgeRepo.createDocumentVersion({
         documentId,
@@ -56,9 +60,13 @@ export class DocumentPipeline {
       });
 
       // 3. Extraction & Semantic Chunking
+      currentStage = "Chunking";
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
       const chunks: SemanticChunk[] = SemanticChunker.chunk(content, metadata);
       
-      // Save chunks and Embeddings (Fixing UUID Cast bug)
+      // 4. Save chunks and Embeddings (Fixing UUID Cast bug)
+      currentStage = "Embedding";
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
       const embedStart = Date.now();
       const textsToEmbed = chunks.map(c => c.content);
       const embeddings = await this.embeddingProvider.embedBatch(textsToEmbed);
@@ -66,11 +74,13 @@ export class DocumentPipeline {
       
       await this.eventBus.publish(DomainEvents.EmbeddingsGenerated, { documentId, count: embeddings.length, embedDuration });
 
+      // 5. Vector Indexing
+      currentStage = "Vector Indexing";
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
       const vectorStart = Date.now();
       const { prisma } = await import("../../data/prisma.js");
       
       for (let i = 0; i < chunks.length; i++) {
-        // 1. Create chunk
         const createdChunk = await prisma.documentChunk.create({
           data: {
             versionId: version.id,
@@ -80,14 +90,13 @@ export class DocumentPipeline {
             tokenCount: chunks[i].tokenEstimate
           }
         });
-        
-        // 2. Upsert Vector using correct UUID
         await this.vectorRepo.upsertVector(createdChunk.id, documentId, collectionId, embeddings[i], chunks[i].metadata);
       }
       const vectorDuration = Date.now() - vectorStart;
 
       // 6. Finalization
-      await this.knowledgeRepo.updateDocumentStatus(documentId, "indexed");
+      currentStage = "Completed";
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
       
       const totalDuration = Date.now() - processingStart;
       
@@ -101,8 +110,32 @@ export class DocumentPipeline {
 
       await this.eventBus.publish(DomainEvents.KnowledgeIndexed, { documentId, totalDuration });
     } catch (error: any) {
-      await this.knowledgeRepo.updateDocumentStatus(documentId, "failed");
-      Logger.error("Document ingestion background processing failed", error, { documentId });
+      console.error(`FAILED DURING ${currentStage.toUpperCase()}`);
+      console.error("Document Pipeline Error:", {
+        documentId,
+        collectionId,
+        fileName: __filename,
+        function: "_processDocumentBackground",
+        stage: currentStage,
+        error: error.message,
+        stack: error.stack
+      });
+
+      const { prisma } = await import("../../data/prisma.js");
+      const exactErrorReason = `${currentStage} Failed`;
+      
+      await prisma.knowledgeDocument.update({
+        where: { id: documentId },
+        data: { 
+          status: exactErrorReason, 
+          metadata: { 
+            ...(metadata || {}), 
+            errorReason: error.message,
+            failedStage: currentStage
+          }
+        }
+      });
+      Logger.error(`Document ingestion background processing failed at ${currentStage}`, error, { documentId });
     }
   }
 }

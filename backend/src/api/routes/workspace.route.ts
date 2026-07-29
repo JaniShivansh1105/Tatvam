@@ -25,4 +25,10 @@ workspaceRouter.get("/lessons/:lessonId/flashcards", asyncHandler(workspaceContr
 workspaceRouter.post("/lessons/:lessonId/flashcards/generate", asyncHandler(workspaceController.generateFlashcard.bind(workspaceController)));
 workspaceRouter.put("/flashcards/:id/review", asyncHandler(workspaceController.reviewFlashcard.bind(workspaceController)));
 
+// ─── Educational Artifacts ────────────────────────────────────────────────
+workspaceRouter.get("/artifacts", asyncHandler(workspaceController.getArtifacts.bind(workspaceController)));
+workspaceRouter.post("/artifacts", asyncHandler(workspaceController.createArtifact.bind(workspaceController)));
+workspaceRouter.patch("/artifacts/:id", asyncHandler(workspaceController.updateArtifact.bind(workspaceController)));
+workspaceRouter.delete("/artifacts/:id", asyncHandler(workspaceController.deleteArtifact.bind(workspaceController)));
+
 export { workspaceRouter };

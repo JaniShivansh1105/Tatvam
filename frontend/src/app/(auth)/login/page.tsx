@@ -20,9 +20,13 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const isRegistered = searchParams.get("registered") === "true";
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
@@ -30,6 +34,12 @@ function LoginContent() {
   const [globalError, setGlobalError] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    // Pre-fetch the dashboard route payload immediately on mount to ensure instantaneous client-side navigation
+    router.prefetch(ROUTES.DASHBOARD.HOME);
+    router.prefetch(ROUTES.ONBOARDING || "/onboarding");
+  }, [router]);
 
   const {
     register,
@@ -53,12 +63,19 @@ function LoginContent() {
       setToken(accessToken);
       setUser(user);
       
-      // Pre-warm dashboard cache in background while navigating
-      apiClient.get("/content/dashboard").catch(() => {});
-      
       if (!user.onboardingCompleted) {
         router.push(ROUTES.ONBOARDING || "/onboarding");
       } else {
+        // Pre-warm React Query cache synchronously right before pushing
+        queryClient.prefetchQuery({
+          queryKey: ["dashboard", user.id],
+          queryFn: async () => {
+            const res = await apiClient.get("/content/dashboard");
+            return res.data.data;
+          },
+          staleTime: 1000 * 60 * 5,
+        });
+        
         router.push(ROUTES.DASHBOARD.HOME);
       }
     } catch (error: any) {

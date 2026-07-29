@@ -15,6 +15,24 @@ export class KnowledgeRepository implements IKnowledgeRepository {
     });
   }
 
+  async getOrCreateDefaultCollection(userId: string) {
+    const name = "Default Collection";
+    let collection = await this.db.knowledgeCollection.findFirst({
+      where: { ownerId: userId, name }
+    });
+    
+    if (!collection) {
+      collection = await this.db.knowledgeCollection.create({
+        data: {
+          name,
+          ownerId: userId,
+          isPublic: false
+        }
+      });
+    }
+    return collection;
+  }
+
   async createDocument(data: any) {
     return this.db.knowledgeDocument.create({ data });
   }

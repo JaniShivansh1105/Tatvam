@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type PanelView = 'context' | 'artifacts' | 'progress';
+type PanelView = 'context' | 'artifacts' | 'progress' | 'history';
 
 interface WorkspaceState {
   isSidebarOpen: boolean;

@@ -1,36 +1,54 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useViewerStore } from '../../../store/viewer.store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ZoomIn, ZoomOut, Search as SearchIcon, Maximize, FileText, BrainCircuit, PenTool, Bookmark, MessageSquare } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, Search as SearchIcon, Maximize, FileText, BrainCircuit, PenTool, Bookmark, MessageSquare, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useConversationStore } from '../../../store/conversation.store';
-import { workspaceEvents, EVENTS } from '../../../lib/workspace-events';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export const DocumentViewer = () => {
   const { isOpen, activeDocument, closeViewer, zoomLevel, setZoomLevel } = useViewerStore();
   const { addMessage, setGenerating } = useConversationStore();
+  
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [pdfUrl, setPdfUrl] = useState<string>('');
+
+  useEffect(() => {
+    // In a real app, this would be the actual file URL from backend
+    // For this MVP, if it's not available, we use a placeholder or handle blob
+    if (activeDocument) {
+      setPdfUrl(activeDocument.fileUrl || '');
+      setPageNumber(1);
+    }
+  }, [activeDocument]);
 
   if (!isOpen || !activeDocument) return null;
 
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
+
   const handleAIAction = (action: string) => {
-    // Navigate to conversation panel logic or just emit an event
     closeViewer();
-    // In a real app we might switch routing back to /workspace to show the conversation
-    // but for now, we just populate the conversation store
     addMessage({
       id: Date.now().toString(),
       role: 'user',
-      content: `${action} based on ${activeDocument.title}`
+      content: `${action} based on ${activeDocument.title} (Page ${pageNumber})`
     });
     setGenerating(true);
     
-    // Simulate generation
+    // Simulate generation triggering backend
     setTimeout(() => {
       addMessage({
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I'd be happy to ${action.toLowerCase()} based on **${activeDocument.title}**.`
+        content: `I'd be happy to ${action.toLowerCase()} based on **${activeDocument.title}** (Page ${pageNumber}).`
       });
       setGenerating(false);
     }, 1000);
@@ -51,14 +69,39 @@ export const DocumentViewer = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 px-4 shrink-0">
-            <button className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><SearchIcon size={16} /></button>
+          <div className="flex items-center gap-3 px-4 shrink-0">
+            {/* Pagination */}
+            <div className="flex items-center gap-2 bg-[#F8F9FF] border border-[#E2E8F0] rounded-lg p-1">
+              <button 
+                onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                disabled={pageNumber <= 1}
+                className="p-1 text-[#A0AEC0] hover:text-[#1B1D35] disabled:opacity-50"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-xs font-bold text-[#4A5568] px-2">
+                Page {pageNumber} of {numPages || '-'}
+              </span>
+              <button 
+                onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))}
+                disabled={pageNumber >= (numPages || 1)}
+                className="p-1 text-[#A0AEC0] hover:text-[#1B1D35] disabled:opacity-50"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+
             <div className="w-px h-4 bg-[#E2E8F0] mx-1" />
+            
             <button onClick={() => setZoomLevel(Math.max(50, zoomLevel - 10))} className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><ZoomOut size={16} /></button>
             <span className="text-xs font-bold text-[#4A5568] w-12 text-center">{zoomLevel}%</span>
             <button onClick={() => setZoomLevel(Math.min(200, zoomLevel + 10))} className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><ZoomIn size={16} /></button>
-            <button className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><Maximize size={16} /></button>
+            
             <div className="w-px h-4 bg-[#E2E8F0] mx-1" />
+            
+            <button className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors" title="Download">
+              <Download size={16} />
+            </button>
             <button onClick={closeViewer} className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><X size={18} /></button>
           </div>
         </header>
@@ -69,23 +112,47 @@ export const DocumentViewer = () => {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}
-              className="bg-white w-full max-w-4xl shadow-xl rounded-sm min-h-[1056px] p-12 border border-[#E2E8F0]"
+              className="w-full flex justify-center"
             >
-              <h1 className="text-3xl font-bold text-[#1B1D35] mb-6">{activeDocument.title.replace('.pdf', '')}</h1>
-              <p className="text-[#4A5568] leading-relaxed mb-4">
-                This is a simulated document viewer rendering the content for {activeDocument.title}.
-                In a full implementation, this area mounts PDF.js, a Markdown renderer, or a canvas for image rendering.
-              </p>
-              <div className="h-4 bg-[#EDF2F7] w-full mb-2 rounded" />
-              <div className="h-4 bg-[#EDF2F7] w-5/6 mb-2 rounded" />
-              <div className="h-4 bg-[#EDF2F7] w-4/6 mb-8 rounded" />
-              
-              <h2 className="text-xl font-bold text-[#2D3748] mb-4">1. Introduction</h2>
-              <div className="h-4 bg-[#F8F9FF] w-full mb-2 rounded" />
-              <div className="h-4 bg-[#F8F9FF] w-full mb-2 rounded" />
-              <div className="h-4 bg-[#F8F9FF] w-full mb-2 rounded" />
-              <div className="h-4 bg-[#F8F9FF] w-3/4 mb-2 rounded" />
+              {activeDocument.type === 'PDF' ? (
+                <div className="shadow-xl rounded-sm border border-[#E2E8F0] bg-white overflow-hidden w-full max-w-4xl min-h-[800px] flex justify-center">
+                   {pdfUrl ? (
+                     <Document
+                        file={pdfUrl}
+                        onLoadSuccess={onDocumentLoadSuccess}
+                        loading={<div className="p-12 text-[#A0AEC0] w-full text-center mt-20">Loading PDF...</div>}
+                        error={
+                          <div className="p-12 text-[#A0AEC0] flex flex-col items-center mt-20 w-full text-center">
+                            <FileText size={48} className="mb-4 opacity-50" />
+                            <p>Cannot load PDF.</p>
+                            <p className="text-xs mt-2">The file may be corrupted or unavailable.</p>
+                          </div>
+                        }
+                      >
+                        <Page 
+                          pageNumber={pageNumber} 
+                          scale={zoomLevel / 100} 
+                          renderTextLayer={true}
+                          renderAnnotationLayer={true}
+                          className="shadow-sm"
+                        />
+                      </Document>
+                   ) : (
+                      <div className="p-12 text-[#A0AEC0] flex flex-col items-center mt-20 w-full text-center">
+                        <FileText size={48} className="mb-4 opacity-50 text-[#6C5CE7]" />
+                        <p className="text-lg font-semibold text-[#1B1D35]">No PDF File Available</p>
+                        <p className="text-sm mt-2">This document does not have an active file attached.</p>
+                      </div>
+                   )}
+                </div>
+              ) : (
+                <div className="bg-white w-full max-w-4xl shadow-xl rounded-sm min-h-[1056px] p-12 border border-[#E2E8F0]" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
+                  <h1 className="text-3xl font-bold text-[#1B1D35] mb-6">{activeDocument.title}</h1>
+                  <p className="text-[#4A5568] leading-relaxed mb-4">
+                    Text Document Viewer.
+                  </p>
+                </div>
+              )}
             </motion.div>
           </main>
 
@@ -93,7 +160,7 @@ export const DocumentViewer = () => {
           <aside className="w-72 bg-white border-l border-[#E2E8F0] flex flex-col shadow-[-10px_0_20px_rgba(0,0,0,0.02)] z-10">
             <div className="p-4 border-b border-[#E2E8F0] bg-[#F8F9FF]">
               <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider flex items-center gap-2">
-                <BrainCircuit size={14} className="text-[#6C5CE7]" /> AI Actions
+                <BrainCircuit size={14} className="text-[#6C5CE7]" /> AI Actions (Page {pageNumber})
               </h3>
             </div>
             
@@ -103,7 +170,7 @@ export const DocumentViewer = () => {
               <ActionButton icon={<PenTool size={16} />} label="Generate Notes" onClick={() => handleAIAction('Generate smart notes')} />
               <ActionButton icon={<BrainCircuit size={16} />} label="Generate Quiz" onClick={() => handleAIAction('Generate a practice quiz')} />
               <div className="my-4 border-t border-[#E2E8F0]" />
-              <ActionButton icon={<Bookmark size={16} />} label="Bookmark Page" onClick={() => {}} />
+              <ActionButton icon={<Bookmark size={16} />} label="Bookmark Page" onClick={() => handleAIAction('Bookmark this page')} />
             </div>
           </aside>
         </div>

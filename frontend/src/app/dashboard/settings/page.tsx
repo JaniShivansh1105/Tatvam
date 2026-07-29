@@ -27,7 +27,13 @@ export default function SettingsPage() {
     (user as any)?.preference?.notificationsEnabled ?? true
   );
   const [preferredLanguage, setPreferredLanguage] = useState(
-    (user as any)?.preference?.language?.name || "English"
+    (user as any)?.profile?.preferredLanguage || "English"
+  );
+  const [nativeLanguage, setNativeLanguage] = useState(
+    (user as any)?.profile?.nativeLanguage || ""
+  );
+  const [secondaryLanguage, setSecondaryLanguage] = useState(
+    (user as any)?.profile?.secondaryLanguage || ""
   );
   const [theme, setTheme] = useState(
     (user as any)?.preference?.theme || "LIGHT"
@@ -35,17 +41,25 @@ export default function SettingsPage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const updatePreferencesMutation = useMutation({
-    mutationFn: async (payload: { preferredLanguageName?: string; notificationsEnabled?: boolean; theme?: string }) => {
+    mutationFn: async (payload: { notificationsEnabled?: boolean; theme?: string }) => {
       const res = await apiClient.put("/auth/preferences", payload);
       return res.data.data.preference;
     },
     onSuccess: (updatedPreference) => {
-      if (user) {
-        setUser({ ...user, preference: updatedPreference });
-      }
-      if (updatedPreference.language?.name) {
-        setEngineLanguage(updatedPreference.language.name);
-      }
+      if (user) setUser({ ...user, preference: updatedPreference });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    },
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async (payload: { preferredLanguage?: string; nativeLanguage?: string; secondaryLanguage?: string }) => {
+      const res = await apiClient.put("/auth/profile", payload);
+      return res.data.data.user.profile;
+    },
+    onSuccess: (updatedProfile) => {
+      if (user) setUser({ ...user, profile: updatedProfile });
+      if (updatedProfile.preferredLanguage) setEngineLanguage(updatedProfile.preferredLanguage);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     },
@@ -69,9 +83,17 @@ export default function SettingsPage() {
     }
   };
 
-  const handleLanguageChange = (lang: string) => {
-    setPreferredLanguage(lang);
-    updatePreferencesMutation.mutate({ preferredLanguageName: lang });
+  const handleLanguageChange = (field: 'preferred' | 'native' | 'secondary', lang: string) => {
+    if (field === 'preferred') {
+      setPreferredLanguage(lang);
+      updateProfileMutation.mutate({ preferredLanguage: lang });
+    } else if (field === 'native') {
+      setNativeLanguage(lang);
+      updateProfileMutation.mutate({ nativeLanguage: lang });
+    } else if (field === 'secondary') {
+      setSecondaryLanguage(lang);
+      updateProfileMutation.mutate({ secondaryLanguage: lang });
+    }
   };
 
   const handleThemeChange = (newTheme: string) => {
@@ -157,17 +179,55 @@ export default function SettingsPage() {
                       <p className="text-[12px] text-[#A0AEC0] mt-2">Contact support to change your email address.</p>
                     </div>
 
-                    <div>
-                      <label className="block text-[13px] font-bold text-[#4A5568] mb-2">Learning Language</label>
-                      <select 
-                        value={preferredLanguage}
-                        onChange={(e) => handleLanguageChange(e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px]"
-                      >
-                        <option value="English">English</option>
-                        <option value="Hindi">Hindi</option>
-                        <option value="Spanish">Spanish</option>
-                      </select>
+                    <div className="pt-4 border-t border-[#E2E8F0]">
+                      <h3 className="text-[16px] font-bold text-[#1B1D35] mb-4">Language Preferences</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-[13px] font-bold text-[#4A5568] mb-2">Preferred Language (AI Explanations)</label>
+                          <select 
+                            value={preferredLanguage}
+                            onChange={(e) => handleLanguageChange('preferred', e.target.value)}
+                            className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px]"
+                          >
+                            <option value="English">English</option>
+                            <option value="Hindi">Hindi</option>
+                            <option value="Gujarati">Gujarati</option>
+                            <option value="Spanish">Spanish</option>
+                            <option value="French">French</option>
+                            <option value="German">German</option>
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[13px] font-bold text-[#4A5568] mb-2">Native Language</label>
+                            <select 
+                              value={nativeLanguage}
+                              onChange={(e) => handleLanguageChange('native', e.target.value)}
+                              className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px]"
+                            >
+                              <option value="">None</option>
+                              <option value="English">English</option>
+                              <option value="Hindi">Hindi</option>
+                              <option value="Gujarati">Gujarati</option>
+                              <option value="Spanish">Spanish</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[13px] font-bold text-[#4A5568] mb-2">Secondary Language</label>
+                            <select 
+                              value={secondaryLanguage}
+                              onChange={(e) => handleLanguageChange('secondary', e.target.value)}
+                              className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px]"
+                            >
+                              <option value="">None</option>
+                              <option value="English">English</option>
+                              <option value="Hindi">Hindi</option>
+                              <option value="Gujarati">Gujarati</option>
+                              <option value="Spanish">Spanish</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

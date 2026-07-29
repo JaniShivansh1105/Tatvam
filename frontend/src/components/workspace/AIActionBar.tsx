@@ -5,28 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, BrainCircuit, Target, RefreshCw, PenTool } from 'lucide-react';
 import { useConversationStore } from '../../store/conversation.store';
 
-export const AIActionBar = () => {
-  const { messages, isGenerating, addMessage, setGenerating, updateMessage } = useConversationStore();
+export const AIActionBar = ({ onAction }: { onAction?: (text: string) => void }) => {
+  const { messages, isGenerating } = useConversationStore();
 
-  const handleAction = async (actionText: string) => {
-    if (isGenerating) return;
-    
-    addMessage({ id: Date.now().toString(), role: 'user', content: actionText });
-    setGenerating(true);
-
-    const assistantId = (Date.now() + 1).toString();
-    addMessage({ id: assistantId, role: 'assistant', content: '', isStreaming: true });
-
-    // Mock response for quick actions
-    let fakeText = `Sure! Let's ${actionText.toLowerCase()}. Here is a detailed breakdown...`;
-    let current = "";
-    for (let i = 0; i < fakeText.length; i++) {
-      current += fakeText[i];
-      updateMessage(assistantId, current, true);
-      await new Promise(r => setTimeout(r, 20));
-    }
-    updateMessage(assistantId, current, false);
-    setGenerating(false);
+  const handleAction = (actionText: string) => {
+    if (isGenerating || !onAction) return;
+    onAction(actionText);
   };
 
   const lastMessage = messages[messages.length - 1];

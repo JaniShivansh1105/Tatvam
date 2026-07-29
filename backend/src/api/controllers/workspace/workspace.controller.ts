@@ -103,4 +103,67 @@ export class WorkspaceController {
     const flashcard = await reviewFlashcardUseCase.execute(userId, id, req.body);
     return sendSuccess({ res, data: { flashcard } });
   }
+
+  // ─── Educational Artifacts ───────────────────────────────────────────────
+  async getArtifacts(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const { prisma } = await import("../../../data/prisma.js");
+    const artifacts = await prisma.educationalArtifact.findMany({
+      where: { ownerId: userId },
+      orderBy: { createdAt: "desc" }
+    });
+    return sendSuccess({ res, data: { artifacts } });
+  }
+
+  async createArtifact(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const { prisma } = await import("../../../data/prisma.js");
+    
+    let artifact;
+    if (req.body.sourceConversationId) {
+      const [newArtifact] = await prisma.$transaction([
+        prisma.educationalArtifact.create({
+          data: {
+            ...req.body,
+            ownerId: userId
+          }
+        }),
+        prisma.chatSession.update({
+          where: { id: req.body.sourceConversationId },
+          data: { updatedAt: new Date() }
+        })
+      ]);
+      artifact = newArtifact;
+    } else {
+      artifact = await prisma.educationalArtifact.create({
+        data: {
+          ...req.body,
+          ownerId: userId
+        }
+      });
+    }
+
+    return sendSuccess({ res, status: 201, data: { artifact } });
+  }
+
+  async updateArtifact(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const id = req.params.id as string;
+    const { prisma } = await import("../../../data/prisma.js");
+    const artifact = await prisma.educationalArtifact.update({
+      where: { id, ownerId: userId },
+      data: req.body
+    });
+    return sendSuccess({ res, data: { artifact } });
+  }
+
+  async deleteArtifact(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const id = req.params.id as string;
+    const { prisma } = await import("../../../data/prisma.js");
+    await prisma.educationalArtifact.delete({
+      where: { id, ownerId: userId }
+    });
+    return sendSuccess({ res, data: { message: "Artifact deleted" } });
+  }
 }

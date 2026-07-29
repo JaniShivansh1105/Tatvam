@@ -6,8 +6,13 @@ import { useKnowledgeStore } from '../../../store/knowledge.store';
 import { useUploadStore } from '../../../store/upload.store';
 import { DocumentCard } from '../../../components/workspace/knowledge/DocumentCard';
 import { UploadModal } from '../../../components/workspace/knowledge/UploadModal';
-import { DocumentViewer } from '../../../components/workspace/knowledge/DocumentViewer';
 import { KnowledgeSearch } from '../../../components/workspace/knowledge/KnowledgeSearch';
+import dynamic from 'next/dynamic';
+
+const DocumentViewer = dynamic(
+  () => import('../../../components/workspace/knowledge/DocumentViewer').then((mod) => mod.DocumentViewer),
+  { ssr: false }
+);
 
 export default function KnowledgePageContent() {
   const { documents, folders, activeFolderId, setActiveFolder } = useKnowledgeStore();

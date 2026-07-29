@@ -10,6 +10,7 @@ export interface Message {
 interface ConversationState {
   sessionId: string | null;
   setSessionId: (id: string | null) => void;
+  createNewSession: () => void;
 
   messages: Message[];
   addMessage: (message: Message) => void;
@@ -26,6 +27,7 @@ interface ConversationState {
 export const useConversationStore = create<ConversationState>((set) => ({
   sessionId: null,
   setSessionId: (id) => set({ sessionId: id }),
+  createNewSession: () => set({ sessionId: null, messages: [] }),
 
   messages: [],
   addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),

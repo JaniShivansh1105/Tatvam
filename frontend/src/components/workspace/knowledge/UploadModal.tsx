@@ -49,45 +49,58 @@ export const UploadModal = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      // We'll simulate progress events using XMLHttpRequest since fetch doesn't support upload progress yet natively in all simple wrappers,
-      // but for simplicity here we'll jump to 50% immediately, then wait for fetch.
-      updateProgress(id, 50);
-
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/knowledge/upload`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
-        },
-        body: formData
+      const { apiClient } = await import('../../../lib/api-client');
+      
+      const res = await apiClient.post('/knowledge/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            updateProgress(id, percentCompleted);
+          }
+        }
       });
 
-      if (!res.ok) {
-        throw new Error("Upload failed");
+      const json = res.data;
+      const document = json.data;
+
+      // Start polling for processing status
+      let isDone = false;
+      while (!isDone) {
+        await new Promise(r => setTimeout(r, 2000));
+        const statusRes = await apiClient.get(`/knowledge/document/${document.id}/status`);
+        const { status, errorReason } = statusRes.data.data;
+        
+        if (status === 'Completed' || status === 'indexed') {
+          updateProgress(id, 100);
+          updateStatus(id, 'Success');
+          workspaceEvents.emit(EVENTS.DocumentUploaded, { id, name: file.name });
+          
+          addDocument({
+            id: document.id,
+            title: document.title,
+            subject: 'Uncategorized',
+            type: file.name.endsWith('.pdf') ? 'PDF' : file.name.endsWith('.docx') ? 'DOCX' : 'Markdown',
+            size: file.size,
+            uploadDate: new Date().toISOString(),
+            status: 'Indexed',
+            lastUsed: new Date().toISOString(),
+            source: 'Upload',
+            isPinned: false,
+            isFavorite: false,
+            fileUrl: URL.createObjectURL(file)
+          });
+    
+          workspaceEvents.emit(EVENTS.KnowledgeIndexed, { id: document.id, title: document.title });
+          isDone = true;
+        } else if (status === 'Failed') {
+          updateStatus(id, `Failed: ${errorReason || 'Unknown error'}` as any);
+          isDone = true;
+        } else {
+          updateStatus(id, status as any); // Display current stage
+        }
       }
 
-      const json = await res.json();
-      
-      updateProgress(id, 100);
-      updateStatus(id, 'Success');
-      workspaceEvents.emit(EVENTS.DocumentUploaded, { id, name: file.name });
-      
-      const document = json.data;
-      
-      addDocument({
-        id: document.id,
-        title: document.title,
-        subject: 'Uncategorized',
-        type: file.name.endsWith('.pdf') ? 'PDF' : file.name.endsWith('.docx') ? 'DOCX' : 'Markdown',
-        size: file.size,
-        uploadDate: new Date().toISOString(),
-        status: 'Indexed',
-        lastUsed: new Date().toISOString(),
-        source: 'Upload',
-        isPinned: false,
-        isFavorite: false
-      });
-
-      workspaceEvents.emit(EVENTS.KnowledgeIndexed, { id: document.id, title: document.title });
     } catch (error) {
       updateStatus(id, 'Failed');
     }
@@ -130,34 +143,53 @@ export const UploadModal = () => {
             {queue.length > 0 && (
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-2">Upload Queue</h3>
-                {queue.map(item => (
-                  <div key={item.id} className="bg-[#F8F9FF] border border-[#E2E8F0] rounded-xl p-3 flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center shrink-0 border border-[#E2E8F0]">
-                      <FileText className="text-[#A0AEC0]" size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between mb-1">
-                        <p className="text-sm font-bold text-[#1B1D35] truncate pr-4">{item.file.name}</p>
-                        <span className="text-xs font-bold text-[#718096] shrink-0">
-                          {item.status === 'Uploading' ? `${item.progress}%` : item.status}
-                        </span>
+                {queue.map(item => {
+                  const isFailed = item.status.includes('Failed');
+                  const isSuccess = item.status === 'Success';
+                  const isProcessing = !isFailed && !isSuccess;
+
+                  return (
+                    <div key={item.id} className={`bg-[#F8F9FF] border ${isFailed ? 'border-[#FC8181]' : 'border-[#E2E8F0]'} rounded-xl p-3 flex items-center gap-4 transition-colors`}>
+                      <div className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center shrink-0 border border-[#E2E8F0]">
+                        <FileText className="text-[#A0AEC0]" size={20} />
                       </div>
-                      
-                      <div className="h-1.5 w-full bg-[#EDF2F7] rounded-full overflow-hidden">
-                        <motion.div 
-                          className={`h-full rounded-full ${item.status === 'Success' ? 'bg-[#48BB78]' : item.status === 'Failed' ? 'bg-[#E53E3E]' : 'bg-[#6C5CE7]'}`}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${item.progress}%` }}
-                        />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between mb-1">
+                          <p className="text-sm font-bold text-[#1B1D35] truncate pr-4">{item.file.name}</p>
+                          <span className={`text-xs font-bold shrink-0 ${isFailed ? 'text-[#E53E3E]' : 'text-[#718096]'}`}>
+                            {item.status === 'Uploading' ? `${item.progress}%` : item.status}
+                          </span>
+                        </div>
+                        
+                        <div className="h-1.5 w-full bg-[#EDF2F7] rounded-full overflow-hidden mb-1">
+                          <motion.div 
+                            className={`h-full rounded-full ${isSuccess ? 'bg-[#48BB78]' : isFailed ? 'bg-[#E53E3E]' : 'bg-[#6C5CE7]'}`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.progress}%` }}
+                          />
+                        </div>
+                        {isFailed && (
+                          <div className="flex gap-3 mt-1.5">
+                            <button 
+                              onClick={() => uploadFile(item.id, item.file)}
+                              className="text-xs font-bold text-[#6C5CE7] hover:text-[#5b4dcf]"
+                            >
+                              Retry
+                            </button>
+                            <button className="text-xs font-bold text-[#718096] hover:text-[#4A5568]">
+                              View Details
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="shrink-0 w-6 flex justify-end">
+                        {isSuccess && <CheckCircle2 className="text-[#48BB78]" size={18} />}
+                        {isProcessing && <div className="w-4 h-4 border-2 border-[#6C5CE7] border-t-transparent rounded-full animate-spin" />}
+                        {isFailed && <AlertCircle className="text-[#E53E3E]" size={18} />}
                       </div>
                     </div>
-                    <div className="shrink-0 w-6 flex justify-end">
-                      {item.status === 'Success' && <CheckCircle2 className="text-[#48BB78]" size={18} />}
-                      {item.status === 'Processing' && <div className="w-4 h-4 border-2 border-[#6C5CE7] border-t-transparent rounded-full animate-spin" />}
-                      {item.status === 'Failed' && <AlertCircle className="text-[#E53E3E]" size={18} />}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

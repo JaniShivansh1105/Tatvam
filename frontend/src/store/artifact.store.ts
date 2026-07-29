@@ -1,12 +1,14 @@
 import { create } from 'zustand';
+import { apiClient } from '../lib/api-client';
 
 export interface Artifact {
   id: string;
   title: string;
-  type: 'Smart Notes' | 'Flashcards' | 'Quiz' | 'Summary' | 'Revision Sheet';
+  artifactType: string;
   description: string;
-  content?: string;
+  content?: any;
   createdAt: string;
+  sourceConversationId?: string;
 }
 
 interface ArtifactState {
@@ -15,27 +17,25 @@ interface ArtifactState {
   addArtifact: (artifact: Artifact) => void;
   removeArtifact: (id: string) => void;
   setGeneratingArtifact: (isGenerating: boolean) => void;
+  fetchArtifacts: () => Promise<void>;
+  updateArtifact: (id: string, updates: Partial<Artifact>) => void;
 }
 
 export const useArtifactStore = create<ArtifactState>((set) => ({
-  artifacts: [
-    {
-      id: 'mock-1',
-      title: 'Binary Search Trees',
-      type: 'Smart Notes',
-      description: 'Automatically generated notes from your recent conversation.',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 'mock-2',
-      title: 'Algorithm Complexities',
-      type: 'Flashcards',
-      description: '12 cards generated to help you practice.',
-      createdAt: new Date().toISOString()
-    }
-  ],
+  artifacts: [],
   isGeneratingArtifact: false,
   addArtifact: (artifact) => set((state) => ({ artifacts: [artifact, ...state.artifacts] })),
   removeArtifact: (id) => set((state) => ({ artifacts: state.artifacts.filter(a => a.id !== id) })),
-  setGeneratingArtifact: (isGenerating) => set({ isGeneratingArtifact: isGenerating })
+  setGeneratingArtifact: (isGenerating) => set({ isGeneratingArtifact: isGenerating }),
+  fetchArtifacts: async () => {
+    try {
+      const res = await apiClient.get('/workspace/artifacts');
+      set({ artifacts: res.data.data.artifacts });
+    } catch (e) {
+      console.error("Failed to fetch artifacts", e);
+    }
+  },
+  updateArtifact: (id, updates) => set((state) => ({
+    artifacts: state.artifacts.map(a => a.id === id ? { ...a, ...updates } : a)
+  }))
 }));

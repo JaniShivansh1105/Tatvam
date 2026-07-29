@@ -13,26 +13,37 @@ import { workspaceEvents, EVENTS } from '../../lib/workspace-events';
 export const ConversationPanel = () => {
   const { messages, addMessage, isGenerating, setGenerating, updateMessage } = useConversationStore();
   const [input, setInput] = useState('');
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(true);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setIsScrolledToBottom(isAtBottom);
+    }
+  };
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isScrolledToBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isGenerating]);
 
-  const handleSend = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!input.trim() || isGenerating) return;
-
-    const userText = input.trim();
-    setInput('');
-    addMessage({ id: Date.now().toString(), role: 'user', content: userText });
+  const sendMessage = async (text: string) => {
+    if (isGenerating) return;
+    
+    addMessage({ id: Date.now().toString(), role: 'user', content: text });
     setGenerating(true);
 
     const assistantId = (Date.now() + 1).toString();
     addMessage({ id: assistantId, role: 'assistant', content: '', isStreaming: true });
 
     try {
-      const token = localStorage.getItem("token");
+      const { useAuthStore } = await import('../../store/auth-store');
+      const token = useAuthStore.getState().accessToken;
+      
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/ai/mentor/chat`, {
         method: "POST",
         headers: {
@@ -40,8 +51,10 @@ export const ConversationPanel = () => {
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          messages: messages.concat([{ id: Date.now().toString(), role: 'user', content: userText }]),
-          context: {} // Extend later if needed
+          messages: messages.concat([{ id: Date.now().toString(), role: 'user', content: text }]),
+          context: {
+            sessionId: useConversationStore.getState().sessionId
+          }
         })
       });
 
@@ -69,6 +82,15 @@ export const ConversationPanel = () => {
                 try {
                   const data = JSON.parse(dataStr);
                   if (data.text) {
+                    if (data.text.startsWith('__META__:')) {
+                      try {
+                        const meta = JSON.parse(data.text.slice(9));
+                        if (meta.sessionId) {
+                          useConversationStore.getState().setSessionId(meta.sessionId);
+                        }
+                      } catch (e) {}
+                      continue;
+                    }
                     current += data.text;
                     updateMessage(assistantId, current, true);
                   } else if (data.error) {
@@ -92,9 +114,21 @@ export const ConversationPanel = () => {
     }
   };
 
+  const handleSend = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || isGenerating) return;
+    const text = input.trim();
+    setInput('');
+    sendMessage(text);
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-white h-full relative border-r border-[#E2E8F0]">
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+      <div 
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
+      >
         <AnimatePresence>
           {messages.length === 0 ? (
             <motion.div 
@@ -113,12 +147,12 @@ export const ConversationPanel = () => {
             </motion.div>
           ) : (
             messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+              <MessageBubble key={msg.id} message={msg} onAction={sendMessage} />
             ))
           )}
+
         </AnimatePresence>
-        
-        <AIActionBar />
+        <AIActionBar onAction={(text: string) => { setInput(text); setTimeout(() => handleSend(), 50); }} />
         
         {isGenerating && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4 max-w-3xl mx-auto">
@@ -166,7 +200,11 @@ export const ConversationPanel = () => {
   );
 };
 
-const MessageBubble = ({ message }: { message: any }) => {
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+
+const MessageBubbleComponent = ({ message, onAction }: { message: any, onAction: (text: string) => void }) => {
   const isUser = message.role === 'user';
   
   return (
@@ -185,7 +223,7 @@ const MessageBubble = ({ message }: { message: any }) => {
             <p className="text-[14.5px] font-medium">{message.content}</p>
           ) : (
             <div className="prose prose-sm max-w-none text-current prose-p:leading-relaxed prose-pre:bg-[#F8F9FF] prose-pre:text-[#2D3748] prose-pre:border prose-pre:border-[#E2E8F0]">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                 {message.content || '...'}
               </ReactMarkdown>
               {message.isStreaming && (
@@ -195,9 +233,11 @@ const MessageBubble = ({ message }: { message: any }) => {
           )}
         </div>
         {!isUser && !message.isStreaming && (
-          <MessageActions messageId={message.id} content={message.content} />
+          <MessageActions messageId={message.id} content={message.content} onAction={onAction} />
         )}
       </div>
     </motion.div>
   );
 };
+
+const MessageBubble = React.memo(MessageBubbleComponent);

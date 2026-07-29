@@ -21,11 +21,41 @@ const formatSize = (bytes: number) => {
   return (bytes / 1048576).toFixed(1) + ' MB';
 };
 
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu';
+import { toast } from 'react-hot-toast';
+
 export const DocumentCard = ({ document, viewMode }: { document: KnowledgeDocument, viewMode: 'grid' | 'list' }) => {
-  const { togglePin, toggleFavorite } = useKnowledgeStore();
+  const { togglePin, toggleFavorite, removeDocument, renameDocument, updateDocumentStatus } = useKnowledgeStore();
   const { openDocument } = useViewerStore();
 
   const isGrid = viewMode === 'grid';
+
+  const handleRename = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newName = window.prompt("Enter new document name:", document.title);
+    if (newName && newName.trim()) {
+      renameDocument(document.id, newName.trim());
+      toast.success("Document renamed successfully");
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to delete this document?")) {
+      removeDocument(document.id);
+      toast.success("Document deleted");
+    }
+  };
+
+  const handleRetry = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    updateDocumentStatus(document.id, 'Processing');
+    toast.success("Retrying document processing...");
+    setTimeout(() => {
+      updateDocumentStatus(document.id, 'Indexed');
+      toast.success("Document successfully processed");
+    }, 2000);
+  };
 
   return (
     <motion.div 
@@ -43,6 +73,20 @@ export const DocumentCard = ({ document, viewMode }: { document: KnowledgeDocume
         <button onClick={(e) => { e.stopPropagation(); toggleFavorite(document.id); }} className={`p-1.5 rounded-md hover:bg-[#F8F9FF] ${document.isFavorite ? 'text-[#D69E2E]' : 'text-[#A0AEC0]'}`}>
           <Star size={14} className={document.isFavorite ? "fill-current" : ""} />
         </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button onClick={(e) => e.stopPropagation()} className="p-1.5 rounded-md hover:bg-[#F8F9FF] text-[#A0AEC0]">
+              <MoreVertical size={14} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={handleRename}>Rename</DropdownMenuItem>
+            {document.status === 'Failed' && (
+              <DropdownMenuItem onClick={handleRetry}>Retry Processing</DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:bg-red-50 focus:text-red-600">Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className={`flex items-start ${isGrid ? 'flex-col gap-3 flex-1' : 'gap-4 w-full items-center'}`}>
@@ -78,6 +122,20 @@ export const DocumentCard = ({ document, viewMode }: { document: KnowledgeDocume
                 <button onClick={(e) => { e.stopPropagation(); toggleFavorite(document.id); }} className={`p-1.5 rounded-md hover:bg-[#F8F9FF] ${document.isFavorite ? 'text-[#D69E2E]' : 'text-[#A0AEC0]'}`}>
                   <Star size={14} className={document.isFavorite ? "fill-current" : ""} />
                 </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button onClick={(e) => e.stopPropagation()} className="p-1.5 rounded-md hover:bg-[#F8F9FF] text-[#A0AEC0]">
+                      <MoreVertical size={14} />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuItem onClick={handleRename}>Rename</DropdownMenuItem>
+                    {document.status === 'Failed' && (
+                      <DropdownMenuItem onClick={handleRetry}>Retry Processing</DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:bg-red-50 focus:text-red-600">Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </>
           )}

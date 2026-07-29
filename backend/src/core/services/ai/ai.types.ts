@@ -46,6 +46,7 @@ export interface AIContext {
   lesson?: Record<string, any> | null;
   topic?: Record<string, any> | null;
   preferences?: Record<string, any> | null;
+  profile?: Record<string, any> | null;
   language?: string;
   recentMistakes?: Record<string, any>[];
   activePlan?: Record<string, any> | null;

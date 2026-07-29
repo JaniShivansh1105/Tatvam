@@ -21,4 +21,14 @@ knowledgeRouter.post(
   asyncHandler(knowledgeController.uploadDocument.bind(knowledgeController))
 );
 
+knowledgeRouter.get(
+  "/document/:id/status",
+  asyncHandler(knowledgeController.getDocumentStatus.bind(knowledgeController))
+);
+
+knowledgeRouter.get(
+  "/context",
+  asyncHandler(knowledgeController.getKnowledgeContext.bind(knowledgeController))
+);
+
 export { knowledgeRouter };

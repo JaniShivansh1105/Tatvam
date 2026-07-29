@@ -4,7 +4,7 @@ export interface UploadItem {
   id: string;
   file: File;
   progress: number; // 0 to 100
-  status: 'Queued' | 'Uploading' | 'Processing' | 'Success' | 'Failed';
+  status: 'Queued' | 'Uploading' | 'Processing' | 'Success' | 'Failed' | string;
   error?: string;
 }
 

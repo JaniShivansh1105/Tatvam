@@ -13,7 +13,7 @@ export class ChatStreamUseCase {
 }
 
 export class GetHistoryUseCase {
-  constructor(private readonly chatRepo: IChatRepository, private readonly eventBus: IEventBus) {}
+  constructor(private readonly aiService: any, private readonly eventBus: IEventBus) {}
   async execute(...args: any[]) {
     // @ts-ignore
     return this.aiService.getHistory(...args);
@@ -28,9 +28,9 @@ export class CreateConversationUseCase {
   }
 }
 export class RenameConversationUseCase {
-  constructor(private readonly chatRepo: IChatRepository, private readonly eventBus: IEventBus) {}
-  async execute(...args: any[]) {
-    return;
+  constructor(private readonly aiService: any, private readonly eventBus: IEventBus) {}
+  async execute(userId: string, sessionId: string, data: { title?: string; isPinned?: boolean }) {
+    return this.aiService.updateSession(userId, sessionId, data);
   }
 }
 export class ArchiveConversationUseCase {
@@ -40,9 +40,9 @@ export class ArchiveConversationUseCase {
   }
 }
 export class DeleteConversationUseCase {
-  constructor(private readonly chatRepo: IChatRepository, private readonly eventBus: IEventBus) {}
-  async execute(...args: any[]) {
-    return;
+  constructor(private readonly aiService: any, private readonly eventBus: IEventBus) {}
+  async execute(userId: string, sessionId: string) {
+    return this.aiService.deleteSession(userId, sessionId);
   }
 }
 export class RestoreConversationUseCase {

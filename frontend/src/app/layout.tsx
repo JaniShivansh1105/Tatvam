@@ -24,6 +24,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -37,6 +39,7 @@ export default function RootLayout({
             <ReactQueryProvider>
               <LayoutProvider>
                 <AuthProvider>{children}</AuthProvider>
+                <Toaster position="bottom-right" toastOptions={{ className: 'text-sm font-medium', style: { borderRadius: '12px', padding: '16px', color: '#1B1D35', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' } }} />
               </LayoutProvider>
             </ReactQueryProvider>
           </TooltipProvider>

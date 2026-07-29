@@ -35,6 +35,7 @@ export interface IVectorRepository {
 export interface IKnowledgeRepository {
   createCollection(data: any): Promise<any>;
   getCollectionById(id: string): Promise<any>;
+  getOrCreateDefaultCollection(userId: string): Promise<any>;
   
   createDocument(data: any): Promise<any>;
   updateDocumentStatus(id: string, status: string): Promise<any>;

@@ -4,7 +4,7 @@ export interface KnowledgeDocument {
   id: string;
   title: string;
   subject: string;
-  type: 'PDF' | 'DOCX' | 'PPT' | 'TXT' | 'Markdown' | 'Image';
+  type: 'PDF' | 'DOCX' | 'PPT' | 'TXT' | 'Markdown' | 'Image' | 'Link' | 'Video';
   size: number;
   uploadDate: string;
   status: 'Processing' | 'Indexed' | 'Failed';
@@ -13,6 +13,7 @@ export interface KnowledgeDocument {
   isPinned: boolean;
   isFavorite: boolean;
   folderId?: string;
+  fileUrl?: string;
 }
 
 export interface Folder {
@@ -31,6 +32,8 @@ interface KnowledgeState {
   togglePin: (id: string) => void;
   toggleFavorite: (id: string) => void;
   setActiveFolder: (id: string | null) => void;
+  removeDocument: (id: string) => void;
+  renameDocument: (id: string, newTitle: string) => void;
 }
 
 export const useKnowledgeStore = create<KnowledgeState>((set) => ({
@@ -65,5 +68,11 @@ export const useKnowledgeStore = create<KnowledgeState>((set) => ({
   toggleFavorite: (id) => set((state) => ({
     documents: state.documents.map(d => d.id === id ? { ...d, isFavorite: !d.isFavorite } : d)
   })),
-  setActiveFolder: (id) => set({ activeFolderId: id })
+  setActiveFolder: (id) => set({ activeFolderId: id }),
+  removeDocument: (id) => set((state) => ({
+    documents: state.documents.filter(d => d.id !== id)
+  })),
+  renameDocument: (id, newTitle) => set((state) => ({
+    documents: state.documents.map(d => d.id === id ? { ...d, title: newTitle } : d)
+  }))
 }));

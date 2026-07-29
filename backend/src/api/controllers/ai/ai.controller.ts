@@ -39,4 +39,41 @@ export class AIController {
       res.status(500).json({ success: false, error: "Failed to fetch history" });
     }
   }
+
+  async updateSession(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const id = req.params.id as string;
+    const data = req.body;
+    try {
+      const { renameConversationUseCase } = await import("../../../di/container.js");
+      const updated = await renameConversationUseCase.execute(userId, id, data);
+      res.json({ success: true, data: updated });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to update session" });
+    }
+  }
+
+  async deleteSession(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const id = req.params.id as string;
+    try {
+      const { deleteConversationUseCase } = await import("../../../di/container.js");
+      await deleteConversationUseCase.execute(userId, id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to delete session" });
+    }
+  }
+
+  async generateArtifact(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const { artifactType, requestContent, lessonId } = req.body;
+    try {
+      const { aiService } = await import("../../../di/container.js");
+      const artifact = await aiService.generateStudyArtifact(userId, artifactType, requestContent, lessonId);
+      res.json({ success: true, data: artifact });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to generate artifact" });
+    }
+  }
 }
