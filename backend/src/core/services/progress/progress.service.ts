@@ -65,7 +65,7 @@ export class ProgressService implements IProgressService {
   // ─── Activity Timeline (Lesson-Scoped) ────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async logActivity(userId: string, type: string, lessonId?: string, details?: any) {
-    return prisma.activity.create({
+    const activity = await prisma.activity.create({
       data: {
         userId,
         lessonId,
@@ -73,6 +73,38 @@ export class ProgressService implements IProgressService {
         details: details || {},
       },
     });
+
+    if (type === "MASTERY_INTERACTION" || type.toLowerCase().includes("lesson")) {
+      const profile = await prisma.profile.findUnique({ where: { userId } });
+      if (profile) {
+        const now = new Date();
+        const lastActivity = await prisma.activity.findFirst({
+          where: { 
+            userId, 
+            type: { in: ["MASTERY_INTERACTION", "lesson_viewed"] },
+            id: { not: activity.id }
+          },
+          orderBy: { createdAt: "desc" }
+        });
+
+        if (!lastActivity) {
+          await prisma.profile.update({ where: { userId }, data: { streak: 1 } });
+        } else {
+          const lastDate = lastActivity.createdAt;
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const lastDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+          
+          const diffDays = Math.floor((today.getTime() - lastDay.getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (diffDays === 1) {
+            await prisma.profile.update({ where: { userId }, data: { streak: profile.streak + 1 } });
+          } else if (diffDays > 1) {
+            await prisma.profile.update({ where: { userId }, data: { streak: 1 } });
+          }
+        }
+      }
+    }
+    return activity;
   }
 
   async getTimeline(userId: string, lessonId?: string) {

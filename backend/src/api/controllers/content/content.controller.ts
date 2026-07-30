@@ -28,4 +28,15 @@ export class ContentController {
     const achievements = await getAchievementsUseCase.execute(userId);
     return sendSuccess({ res, data: achievements });
   }
+
+  async globalSearch(req: Request, res: Response) {
+    const userId = req.user!.userId;
+    const query = req.query.q as string;
+    
+    if (!query) return sendSuccess({ res, data: [] });
+    
+    const { contentService } = await import("../../../di/container.js");
+    const results = await contentService.globalSearch(userId, query);
+    return sendSuccess({ res, data: results });
+  }
 }

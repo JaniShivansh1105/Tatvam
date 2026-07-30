@@ -97,16 +97,16 @@ export default function AchievementsPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="bg-[#1B1D35] p-6 rounded-3xl text-white shadow-md relative overflow-hidden"
+              className="bg-white p-6 rounded-3xl text-[#1B1D35] shadow-sm border border-[#E2E8F0] relative overflow-hidden"
              >
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#6C5CE7] to-[#8B7CF6] rounded-2xl flex items-center justify-center shadow-md">
-                    <Award className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 bg-[#F8F9FF] rounded-2xl flex items-center justify-center border border-[#E2E8F0] shadow-sm">
+                    <Award className="w-6 h-6 text-[#6C5CE7]" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-[20px] font-extrabold text-white">Level {level}</h3>
-                      <span className="px-2 py-0.5 rounded-md bg-[#6C5CE7]/30 text-[#E5E1FF] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                      <h3 className="text-[20px] font-extrabold text-[#1B1D35]">Level {level}</h3>
+                      <span className="px-2 py-0.5 rounded-md bg-[#6C5CE7]/10 text-[#6C5CE7] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-[#6C5CE7]" /> Adaptive
                       </span>
                     </div>
@@ -116,19 +116,19 @@ export default function AchievementsPage() {
                 
                 <div className="space-y-3">
                   <div className="flex justify-between text-[13px] font-bold">
-                    <span className="text-[#A0AEC0]">Total Experience</span>
-                    <span className="text-[#00C6FF] font-extrabold">{xp} XP</span>
+                    <span className="text-[#718096]">Total Experience</span>
+                    <span className="text-[#6C5CE7] font-extrabold">{xp} XP</span>
                   </div>
-                  <div className="h-3 bg-white/10 rounded-full overflow-hidden p-0.5">
+                  <div className="h-3 bg-[#F1F5F9] rounded-full overflow-hidden p-0.5">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${progressPercent}%` }}
                       transition={{ duration: 1.2, ease: "easeOut" }}
-                      className="h-full bg-gradient-to-r from-[#6C5CE7] to-[#00C6FF] rounded-full" 
+                      className="h-full bg-gradient-to-r from-[#6C5CE7] to-[#a29bfe] rounded-full" 
                     />
                   </div>
                   <p className="text-[#A0AEC0] text-[12px] text-center mt-3">
-                    <strong className="text-white">{nextLevelXp - currentLevelXp} XP</strong> until Level {level + 1}
+                    <strong className="text-[#1B1D35]">{nextLevelXp - currentLevelXp} XP</strong> until Level {level + 1}
                   </p>
                 </div>
              </motion.div>

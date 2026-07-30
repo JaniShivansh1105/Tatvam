@@ -135,6 +135,9 @@ export class AuthService {
             name: "Default Collection",
             isPublic: false
           }
+        },
+        learningDNA: {
+          create: {}
         }
       },
       select: {

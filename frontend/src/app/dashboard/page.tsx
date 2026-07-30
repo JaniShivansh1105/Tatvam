@@ -89,7 +89,7 @@ export default function DashboardPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <ContinueLearningCard data={data.continueLearning} />
-              <LearningDNACard />
+              <LearningDNACard dna={data.dna} />
             </div>
 
             <StatsGrid data={data.stats} streak={data.user?.streak || 0} />

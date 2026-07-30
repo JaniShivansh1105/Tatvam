@@ -325,6 +325,27 @@ ${ragContext}
     });
   }
 
+  async translateText(text: string, targetLanguage: string, format: string = "text") {
+    try {
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const { env } = await import("../../../config/env.js");
+        const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const prompt = `Translate the following ${format === 'html' ? 'HTML content' : 'text'} into ${targetLanguage}. 
+CRITICAL RULES:
+1. If it is HTML, preserve ALL HTML tags, classes, and structure exactly. Only translate the text inside the tags.
+2. Keep technical terms, mathematical terms, and scientific names in English.
+3. Only return the translated content, no markdown wrappers, no explanations.
+
+${text}`;
+        const result = await model.generateContent(prompt);
+        return result.response.text().trim();
+    } catch (e) {
+        console.error("Translation failed", e);
+        return text; // fallback to original
+    }
+  }
+
   async deleteSession(userId: string, sessionId: string) {
     return prisma.$transaction(async (tx) => {
       // 1. Delete all artifacts linked to this conversation (which covers bookmarks, notes, quizzes, flashcards, etc. saved from AI)

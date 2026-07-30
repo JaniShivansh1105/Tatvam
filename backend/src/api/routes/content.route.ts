@@ -11,5 +11,6 @@ contentRouter.get("/lessons/:slug", asyncHandler(contentController.getLessonBySl
 contentRouter.get("/dashboard", asyncHandler(contentController.getDashboardContent.bind(contentController)));
 contentRouter.get("/roadmap", asyncHandler(contentController.getRoadmap.bind(contentController)));
 contentRouter.get("/achievements", asyncHandler(contentController.getAchievements.bind(contentController)));
+contentRouter.get("/search", asyncHandler(contentController.globalSearch.bind(contentController)));
 
 export { contentRouter };

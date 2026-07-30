@@ -143,13 +143,13 @@ export const DocumentViewer = () => {
                 </div>
               )}
 
-              {activeDocument.type === 'IMAGE' && (
+              {activeDocument.type === 'Image' && (
                 <div className="bg-white w-full max-w-4xl shadow-xl rounded-sm p-12 border border-[#E2E8F0] flex justify-center items-center" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
                   {pdfUrl ? <img src={pdfUrl} alt={activeDocument.title} className="max-w-full h-auto rounded-md shadow-sm" /> : <p>No image available</p>}
                 </div>
               )}
 
-              {(activeDocument.type === 'DOCX' || activeDocument.type === 'PPTX') && (
+              {(activeDocument.type === 'DOCX' || activeDocument.type === 'PPT') && (
                 <div className="bg-white w-full max-w-5xl shadow-xl rounded-sm border border-[#E2E8F0] flex flex-col" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center', minHeight: '800px' }}>
                   {pdfUrl ? (
                     <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(pdfUrl)}`} width="100%" height="800px" frameBorder="0"></iframe>

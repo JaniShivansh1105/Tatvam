@@ -24,16 +24,8 @@ interface DNAData {
   analogyPreference: number;
 }
 
-export function LearningDNACard() {
-  const { data: dna, isLoading } = useQuery<DNAData>({
-    queryKey: ["dashboard", "dna"],
-    queryFn: async () => {
-      const res = await apiClient.get("/progress/dna");
-      return res.data.data.dna;
-    },
-  });
-
-  if (isLoading) {
+export function LearningDNACard({ dna }: { dna?: any }) {
+  if (!dna) {
     return (
       <div className="bg-white rounded-3xl p-8 border border-slate-200/60 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
         <Loader2 className="w-8 h-8 text-[#6C5CE7] animate-spin" />
@@ -41,18 +33,13 @@ export function LearningDNACard() {
     );
   }
 
-  if (!dna) {
-    return null;
-  }
-
   const chartData = [
-    { subject: "Visual", A: dna.visualPreference * 100, fullMark: 100 },
-    { subject: "Pace", A: dna.pacePreference * 100, fullMark: 100 },
-    { subject: "Detail", A: dna.detailPreference * 100, fullMark: 100 },
-    { subject: "Audio", A: dna.audioPreference * 100, fullMark: 100 },
-    { subject: "Reading", A: dna.readingPreference * 100, fullMark: 100 },
-    { subject: "Examples", A: dna.examplePreference * 100, fullMark: 100 },
-    { subject: "Analogies", A: dna.analogyPreference * 100, fullMark: 100 },
+    { subject: "Visual", A: (dna.visualScore || 0) * 100, fullMark: 100 },
+    { subject: "Analytical", A: (dna.analyticalScore || 0) * 100, fullMark: 100 },
+    { subject: "Reading", A: (dna.readingScore || 0) * 100, fullMark: 100 },
+    { subject: "Auditory", A: (dna.auditoryScore || 0) * 100, fullMark: 100 },
+    { subject: "Pace", A: 50, fullMark: 100 },
+    { subject: "Detail", A: 60, fullMark: 100 },
   ];
 
   return (

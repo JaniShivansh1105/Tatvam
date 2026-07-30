@@ -87,7 +87,7 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
       } else if (query && mode === 'Ask AI') {
         setInput(`Regarding "${query}": `);
       } else if (query && mode === 'Translate') {
-        handleSend(`Translate this into my preferred language: "${query}"`);
+        handleSend(`Translate this into ${useEngineStore.getState().language}: "${query}"`);
       }
     };
 

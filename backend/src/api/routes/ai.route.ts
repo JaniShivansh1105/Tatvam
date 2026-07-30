@@ -19,4 +19,7 @@ router.delete("/mentor/sessions/:id", requireAuth, aiController.deleteSession);
 // Generate educational artifact
 router.post("/mentor/artifact", requireAuth, aiController.generateArtifact);
 
+// Translate content
+router.post("/translate", requireAuth, aiController.translate.bind(aiController));
+
 export const aiRouter = router;

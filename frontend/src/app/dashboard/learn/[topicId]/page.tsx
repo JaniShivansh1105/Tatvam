@@ -22,7 +22,7 @@ import { useEngineStore } from "@/store/engine-store";
 import { ContextualPractice } from "@/components/dashboard/learning/workspace/ContextualPractice";
 import { ReflectionCard } from "@/components/dashboard/learning/workspace/ReflectionCard";
 import { SessionSummary } from "@/components/dashboard/learning/workspace/SessionSummary";
-
+import { TranslatedContent } from "@/components/dashboard/learning/TranslatedContent";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { Loader2 } from "lucide-react";
@@ -137,11 +137,10 @@ export default function LessonExperiencePage() {
           <AIMentorPanel isOpen={isMentorOpen} onClose={() => setIsMentorOpen(false)} />
 
           {lessonConfig.sections.map((section: any) => (
-            <ConceptSection key={section.id} id={section.id} title={section.title}>
-              <div 
-                className="text-[17px] text-[#4A5568] leading-[1.8] tracking-wide prose prose-slate max-w-none"
-                dangerouslySetInnerHTML={{ __html: section.content }} 
-              />
+            <ConceptSection key={section.id} id={section.id} title={<TranslatedContent text={section.title} /> as any}>
+              <div className="text-[17px] text-[#4A5568] leading-[1.8] tracking-wide prose prose-slate max-w-none">
+                <TranslatedContent html={section.content} />
+              </div>
             </ConceptSection>
           ))}
 

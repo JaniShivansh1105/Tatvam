@@ -53,6 +53,22 @@ export class AIController {
     }
   }
 
+  async translate(req: Request, res: Response) {
+    try {
+      const { text, targetLanguage, format } = req.body;
+      if (!text || !targetLanguage) {
+        return res.status(400).json({ success: false, error: "text and targetLanguage required" });
+      }
+      
+      const { aiService } = await import("../../../di/container.js");
+      const translated = await aiService.translateText(text, targetLanguage, format);
+      return res.json({ success: true, data: { translated } });
+    } catch (error) {
+      console.error("Translation error:", error);
+      res.status(500).json({ success: false, error: "Translation failed" });
+    }
+  }
+
   async deleteSession(req: Request, res: Response) {
     const userId = req.user!.userId;
     const id = req.params.id as string;

@@ -99,6 +99,15 @@ export class ContentService {
         }
       }
     }
+    let dna = await prisma.learningDNA.findUnique({
+      where: { userId }
+    });
+    if (!dna) {
+      dna = await prisma.learningDNA.create({
+        data: { userId }
+      });
+    }
+
     const learningTime = totalLearningMinutes > 0 ? `${Math.round(totalLearningMinutes)}m` : "0m";
 
     const dailyGoalMinutes = 30;
@@ -168,12 +177,31 @@ export class ContentService {
       theme: { bg: "bg-[#EBF8FF]", text: "text-[#3182CE]", hoverBorder: "hover:border-[#BEE3F8]" }
     });
 
+    const conceptMasteryRecords = await prisma.conceptMastery.findMany({
+      where: { userId },
+      take: 5,
+      orderBy: { confidence: 'desc' }
+    });
+
+    const conceptMastery = conceptMasteryRecords.map(m => ({
+      concept: m.conceptId,
+      level: Math.round(m.confidence * 100)
+    }));
+
     return {
       user: {
         name: user.fullName,
         streak: user.profile?.streak || 0,
         points: user.profile?.points || 0,
       },
+      metrics: {
+        studyTime: learningTime,
+        questionsCompleted: completedLessons * 5, // Approximation since we don't track total Qs right here
+        averageAccuracy: accuracy,
+        streak: user.profile?.streak || 0,
+      },
+      conceptMastery,
+      dna,
       continueLearning: nextLesson ? {
         id: nextLesson.id,
         slug: nextLesson.slug,
@@ -279,6 +307,7 @@ export class ContentService {
       currentLevelXp,
       nextLevelXp,
       badges,
+      recent: badges.filter(b => b.earned).slice(0, 3),
     };
   }
 
@@ -422,5 +451,42 @@ export class ContentService {
     if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
     return `${days}d ago`;
+  }
+
+  async globalSearch(userId: string, query: string) {
+    const q = query.toLowerCase();
+    const results: any[] = [];
+
+    const subjects = await prisma.subject.findMany({
+      where: { name: { contains: q, mode: 'insensitive' } },
+      take: 3
+    });
+    subjects.forEach(s => results.push({ type: 'Subject', title: s.name, desc: s.description, href: `/dashboard/subjects` }));
+
+    const lessons = await prisma.lesson.findMany({
+      where: { title: { contains: q, mode: 'insensitive' } },
+      take: 5
+    });
+    lessons.forEach(l => results.push({ type: 'Lesson', title: l.title, desc: l.description, href: `/dashboard/learn/${l.slug}` }));
+
+    const docs = await prisma.knowledgeDocument.findMany({
+      where: { collection: { ownerId: userId }, title: { contains: q, mode: 'insensitive' } },
+      take: 5
+    });
+    docs.forEach(d => results.push({ type: 'Knowledge', title: d.title, desc: 'Uploaded Document', href: `/dashboard/documents` }));
+
+    const chats = await prisma.chatSession.findMany({
+      where: { userId, title: { contains: q, mode: 'insensitive' } },
+      take: 5
+    });
+    chats.forEach(c => results.push({ type: 'Chat', title: c.title, desc: 'AI Session', href: `/dashboard/mentor` }));
+
+    const artifacts = await prisma.educationalArtifact.findMany({
+      where: { ownerId: userId, title: { contains: q, mode: 'insensitive' } },
+      take: 5
+    });
+    artifacts.forEach(a => results.push({ type: 'Artifact', title: a.title, desc: a.artifactType, href: `/dashboard/documents` }));
+
+    return results;
   }
 }
