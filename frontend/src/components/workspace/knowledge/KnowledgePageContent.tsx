@@ -15,7 +15,7 @@ const DocumentViewer = dynamic(
 );
 
 export default function KnowledgePageContent() {
-  const { documents, folders, activeFolderId, setActiveFolder } = useKnowledgeStore();
+  const { documents, folders, activeFolderId, setActiveFolder, setDocuments } = useKnowledgeStore();
   const { setUploadModalOpen } = useUploadStore();
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -23,9 +23,35 @@ export default function KnowledgePageContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchDocuments = async () => {
+      try {
+        const { apiClient } = await import('../../../lib/api-client');
+        const res = await apiClient.get('/knowledge');
+        if (res.data?.success) {
+          const docs = res.data.data.map((d: any) => ({
+            id: d.id,
+            title: d.title,
+            subject: 'Uncategorized',
+            type: d.sourceType === 'upload' ? (d.metadata?.originalName?.endsWith('.pdf') ? 'PDF' : d.metadata?.originalName?.endsWith('.docx') ? 'DOCX' : 'Markdown') : 'TXT',
+            size: d.metadata?.size || 0,
+            uploadDate: d.createdAt,
+            status: d.status,
+            lastUsed: d.updatedAt,
+            source: d.sourceType,
+            isPinned: false,
+            isFavorite: false,
+            fileUrl: d.metadata?.fileUrl
+          }));
+          setDocuments(docs);
+        }
+      } catch (e) {
+        console.error("Failed to fetch documents", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDocuments();
+  }, [setDocuments]);
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#F8F9FF] text-[#4A5568] relative overflow-hidden rounded-[24px]">

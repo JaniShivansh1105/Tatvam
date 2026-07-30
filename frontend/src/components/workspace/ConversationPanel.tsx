@@ -31,8 +31,19 @@ export const ConversationPanel = () => {
     }
   }, [messages, isGenerating]);
 
+  useEffect(() => {
+    const unsubTriggerChat = workspaceEvents.subscribe(EVENTS.TriggerChat, (payload: any) => {
+      if (payload && payload.text) {
+        sendMessage(payload.text);
+      }
+    });
+    return () => {
+      unsubTriggerChat();
+    };
+  }, []);
+
   const sendMessage = async (text: string) => {
-    if (isGenerating) return;
+    if (useConversationStore.getState().isGenerating) return;
     
     addMessage({ id: Date.now().toString(), role: 'user', content: text });
     setGenerating(true);
@@ -43,6 +54,7 @@ export const ConversationPanel = () => {
     try {
       const { useAuthStore } = await import('../../store/auth-store');
       const token = useAuthStore.getState().accessToken;
+      const currentMessages = useConversationStore.getState().messages;
       
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/ai/mentor/chat`, {
         method: "POST",
@@ -51,7 +63,7 @@ export const ConversationPanel = () => {
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          messages: messages.concat([{ id: Date.now().toString(), role: 'user', content: text }]),
+          messages: currentMessages.filter(m => m.id !== assistantId), // Send all messages except the empty assistant placeholder
           context: {
             sessionId: useConversationStore.getState().sessionId
           }

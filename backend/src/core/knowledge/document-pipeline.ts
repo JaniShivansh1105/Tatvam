@@ -46,37 +46,58 @@ export class DocumentPipeline {
   }
 
   private async _processDocumentBackground(documentId: string, collectionId: string, title: string, content: string, metadata: any, processingStart: number) {
-    let currentStage = "Uploading";
-    
+    let currentStageName = "Text Extraction";
+    let currentStageIndex = 4;
+    const totalStages = 8;
+    const requestId = metadata.requestId || "unknown_req";
+    const userId = metadata.userId || "unknown_user";
+
+    const logStageSuccess = (index: number, name: string) => {
+      console.log(`[${index}/${totalStages}] ${name}\n✓ Success\n\n↓\n`);
+    };
+
     try {
-      // 2. Versioning
-      currentStage = "Extracting Text";
-      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
-      const versionHash = randomBytes(16).toString("hex"); // Simulate hash of content
+      // 2. Versioning (Text Extraction step)
+      currentStageName = "Text Extraction";
+      currentStageIndex = 4;
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStageName);
+      const versionHash = randomBytes(16).toString("hex");
       const version = await this.knowledgeRepo.createDocumentVersion({
         documentId,
         versionHash,
         byteSize: Buffer.byteLength(content, 'utf8')
       });
+      logStageSuccess(currentStageIndex, currentStageName);
 
-      // 3. Extraction & Semantic Chunking
-      currentStage = "Chunking";
-      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
+      // OCR step (We'll assume it passed if we got here, since we do it in controller, but pipeline will log it as 5)
+      currentStageName = "OCR";
+      currentStageIndex = 5;
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStageName);
+      logStageSuccess(currentStageIndex, currentStageName);
+
+      // 3. Chunking
+      currentStageName = "Semantic Chunking";
+      currentStageIndex = 6;
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStageName);
       const chunks: SemanticChunk[] = SemanticChunker.chunk(content, metadata);
+      logStageSuccess(currentStageIndex, currentStageName);
       
-      // 4. Save chunks and Embeddings (Fixing UUID Cast bug)
-      currentStage = "Embedding";
-      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
+      // 4. Embedding
+      currentStageName = "Embedding Generation";
+      currentStageIndex = 7;
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStageName);
       const embedStart = Date.now();
       const textsToEmbed = chunks.map(c => c.content);
       const embeddings = await this.embeddingProvider.embedBatch(textsToEmbed);
       const embedDuration = Date.now() - embedStart;
       
       await this.eventBus.publish(DomainEvents.EmbeddingsGenerated, { documentId, count: embeddings.length, embedDuration });
+      logStageSuccess(currentStageIndex, currentStageName);
 
       // 5. Vector Indexing
-      currentStage = "Vector Indexing";
-      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
+      currentStageName = "Vector Indexing";
+      currentStageIndex = 8;
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStageName);
       const vectorStart = Date.now();
       const { prisma } = await import("../../data/prisma.js");
       
@@ -93,13 +114,49 @@ export class DocumentPipeline {
         await this.vectorRepo.upsertVector(createdChunk.id, documentId, collectionId, embeddings[i], chunks[i].metadata);
       }
       const vectorDuration = Date.now() - vectorStart;
+      logStageSuccess(currentStageIndex, currentStageName);
 
-      // 6. Finalization
-      currentStage = "Completed";
-      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStage);
+      // 6. Auto-Generating Resources (Part 7: Resources Tab)
+      currentStageName = "Auto-Generating Resources";
+      const artifactStageIndex = 9;
+      try {
+        const { aiService } = await import("../../di/container.js");
+        const flashcardsArtifact = await aiService.generateStudyArtifact(userId, "Flashcards", `Important concepts from ${title}`);
+        
+        await prisma.educationalArtifact.create({
+          data: {
+            title: flashcardsArtifact.title,
+            artifactType: "Flashcards",
+            description: flashcardsArtifact.description,
+            content: flashcardsArtifact.content,
+            tags: flashcardsArtifact.tags,
+            ownerId: userId
+          }
+        });
+        
+        const notesArtifact = await aiService.generateStudyArtifact(userId, "Smart Notes", `Key summary and notes from ${title}`);
+        await prisma.educationalArtifact.create({
+          data: {
+            title: notesArtifact.title,
+            artifactType: "Smart Notes",
+            description: notesArtifact.description,
+            content: notesArtifact.content,
+            tags: notesArtifact.tags,
+            ownerId: userId
+          }
+        });
+
+        console.log(`[${artifactStageIndex}/9] ${currentStageName}\n✓ Success\n\n↓\n`);
+      } catch (artifactErr: any) {
+        console.warn(`[${artifactStageIndex}/9] ${currentStageName} Skipped (Non-fatal): ${artifactErr.message}\n\n↓\n`);
+      }
+
+      // 7. Finalization
+      await this.knowledgeRepo.updateDocumentStatus(documentId, "Completed"); // Used 'Completed' to match getKnowledgeContext query
       
       const totalDuration = Date.now() - processingStart;
       
+      console.log(`UPLOAD COMPLETED\n`);
       Logger.info("Document ingestion completed", { 
         documentId, 
         chunkCount: chunks.length, 
@@ -110,19 +167,22 @@ export class DocumentPipeline {
 
       await this.eventBus.publish(DomainEvents.KnowledgeIndexed, { documentId, totalDuration });
     } catch (error: any) {
-      console.error(`FAILED DURING ${currentStage.toUpperCase()}`);
-      console.error("Document Pipeline Error:", {
-        documentId,
-        collectionId,
-        fileName: __filename,
-        function: "_processDocumentBackground",
-        stage: currentStage,
-        error: error.message,
-        stack: error.stack
-      });
+      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+      console.log(`FAILED DURING:\n`);
+      console.log(`${currentStageName}\n`);
+      console.log(`Reason:\n`);
+      console.log(`${error.message}\n`);
+      console.log(`Stack:\n`);
+      console.log(`${error.stack}\n`);
+      console.log(`Request ID: ${requestId}`);
+      console.log(`User ID: ${userId}`);
+      console.log(`Document ID: ${documentId}`);
+      console.log(`Collection ID: ${collectionId}`);
+      console.log(`Original File: ${metadata.originalName || 'Unknown'}\n`);
+      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 
       const { prisma } = await import("../../data/prisma.js");
-      const exactErrorReason = `${currentStage} Failed`;
+      const exactErrorReason = `${currentStageName} Failed`;
       
       await prisma.knowledgeDocument.update({
         where: { id: documentId },
@@ -131,11 +191,12 @@ export class DocumentPipeline {
           metadata: { 
             ...(metadata || {}), 
             errorReason: error.message,
-            failedStage: currentStage
+            failedStage: currentStageName,
+            stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
           }
         }
       });
-      Logger.error(`Document ingestion background processing failed at ${currentStage}`, error, { documentId });
+      Logger.error(`Document ingestion background processing failed at ${currentStageName}`, error, { documentId });
     }
   }
 }

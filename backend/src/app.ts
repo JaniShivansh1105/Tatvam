@@ -18,6 +18,9 @@ import { notFoundHandler } from "./api/middleware/not-found.js";
 
 const app = express();
 
+// ─── Observability (First Middleware) ───────────────────────────────────────
+app.use(requestLogger);
+
 // ─── Security ───────────────────────────────────────────────────────────────
 app.use(helmet());
 app.use(
@@ -41,10 +44,12 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ─── Observability ──────────────────────────────────────────────────────────
-app.use(requestLogger);
-
+// ─── Route specific imports ───────────────────────────────────────────────────
 import { contentRouter } from "./api/routes/content.route.js";
+import path from "path";
+
+// ─── Static Files ───────────────────────────────────────────────────────────
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 app.use("/api/health", healthRouter);

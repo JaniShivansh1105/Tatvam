@@ -10,8 +10,11 @@ export class GeminiEmbeddingProvider implements IEmbeddingProvider {
   }
 
   async embedText(text: string): Promise<number[]> {
-    const model = this.genAI.getGenerativeModel({ model: "text-embedding-004" });
-    const result = await model.embedContent(text);
+    const model = this.genAI.getGenerativeModel({ model: "gemini-embedding-2" });
+    const result = await model.embedContent({ 
+      content: { role: 'user', parts: [{ text }] }, 
+      outputDimensionality: 768 
+    } as any);
     return result.embedding.values;
   }
 
@@ -22,6 +25,6 @@ export class GeminiEmbeddingProvider implements IEmbeddingProvider {
   }
 
   getDimension(): number {
-    return 768; // Gemini text-embedding-004 returns 768 dimensions
+    return 768; // Gemini gemini-embedding-2 returns 768 dimensions using outputDimensionality
   }
 }

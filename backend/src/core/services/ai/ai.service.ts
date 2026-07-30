@@ -130,7 +130,7 @@ Adapt your explanation length and detail level according to these preferences.`;
     const { aiContextBuilder } = await import("../../../di/container.js");
     const aiContext = await aiContextBuilder.buildContext(userId, lessonId);
     const { AIPromptBuilder } = await import("./prompt-builder.js");
-    fullPrompt = AIPromptBuilder.build(fullPrompt, aiContext);
+    fullPrompt = AIPromptBuilder.build(fullPrompt, aiContext, 'conversation');
 
     try {
       const availableProviders = (await import("./providers/provider.manager.js")).ProviderManager.getAvailableProviders(await import("./ai.config.js").then(m => m.AI_FEATURES.mentor));
@@ -276,7 +276,7 @@ ${ragContext}
     const { aiContextBuilder } = await import("../../../di/container.js");
     const aiContext = await aiContextBuilder.buildContext(userId, lessonId);
     const { AIPromptBuilder } = await import("./prompt-builder.js");
-    const finalPrompt = AIPromptBuilder.build(`${systemPrompt}\n\n${userPrompt}`, aiContext);
+    const finalPrompt = AIPromptBuilder.build(`${systemPrompt}\n\n${userPrompt}`, aiContext, 'artifact');
 
     const availableProviders = (await import("./providers/provider.manager.js")).ProviderManager.getAvailableProviders(await import("./ai.config.js").then(m => m.AI_FEATURES.artifact));
     

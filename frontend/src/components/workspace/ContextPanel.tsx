@@ -78,8 +78,9 @@ const TabButton = ({ active, onClick, icon, label }: any) => (
 const ContextView = () => {
   const { currentTopic, learningGoal } = useProgressStore();
   const [retrievedContext, setRetrievedContext] = useState<string | null>(null);
-  const [concepts, setConcepts] = useState<string[]>([]);
-  const [definitions, setDefinitions] = useState<{term: string, definition: string}[]>([]);
+  const [knowledgeData, setKnowledgeData] = useState<any>({
+    concepts: [], definitions: [], formulae: [], relationships: [], dependencies: [], learningGraph: [], importantTopics: []
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -87,8 +88,15 @@ const ContextView = () => {
       try {
         const res = await apiClient.get('/knowledge/context');
         if (res.data?.data) {
-          setConcepts(res.data.data.concepts || []);
-          setDefinitions(res.data.data.definitions || []);
+          setKnowledgeData({
+            concepts: res.data.data.concepts || [],
+            definitions: res.data.data.definitions || [],
+            formulae: res.data.data.formulae || [],
+            relationships: res.data.data.relationships || [],
+            dependencies: res.data.data.dependencies || [],
+            learningGraph: res.data.data.learningGraph || [],
+            importantTopics: res.data.data.importantTopics || []
+          });
         }
       } catch (err) {
         console.error("Failed to fetch knowledge context", err);
@@ -107,6 +115,18 @@ const ContextView = () => {
       unsubKnowledge();
     };
   }, []);
+
+  const renderList = (items: string[], emptyText: string) => {
+    if (loading) return <div className="h-8 bg-[#EDF2F7] rounded animate-pulse w-full"></div>;
+    if (!items || items.length === 0) return <p className="text-xs text-[#718096]">{emptyText}</p>;
+    return (
+      <ul className="list-disc pl-4 space-y-1">
+        {items.map((item, idx) => (
+          <li key={idx} className="text-xs text-[#4A5568]">{item}</li>
+        ))}
+      </ul>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -136,9 +156,9 @@ const ContextView = () => {
         </h3>
         {loading ? (
           <div className="h-8 bg-[#EDF2F7] rounded animate-pulse w-full"></div>
-        ) : concepts.length > 0 ? (
+        ) : knowledgeData.concepts.length > 0 ? (
           <div className="flex flex-wrap gap-2">
-            {concepts.map(concept => (
+            {knowledgeData.concepts.map((concept: string) => (
               <span key={concept} className="px-2 py-1 bg-[#F0E6FF] text-[#6C5CE7] border border-[#D6BCFA] rounded-md text-[11px] font-bold">
                 {concept}
               </span>
@@ -157,17 +177,51 @@ const ContextView = () => {
           {loading ? (
              <div className="space-y-2">
                <div className="h-10 bg-[#EDF2F7] rounded animate-pulse w-full"></div>
-               <div className="h-10 bg-[#EDF2F7] rounded animate-pulse w-full"></div>
              </div>
-          ) : definitions.length > 0 ? definitions.map((def, idx) => (
+          ) : knowledgeData.definitions.length > 0 ? knowledgeData.definitions.map((def: any, idx: number) => (
             <div key={idx} className="border border-[#E2E8F0] bg-[#F8F9FF] rounded-xl p-3">
               <h4 className="text-[13px] font-bold text-[#1B1D35] mb-1">{def.term}</h4>
               <p className="text-xs text-[#718096]">{def.definition}</p>
             </div>
           )) : (
-            <p className="text-xs text-[#718096]">Upload documents to generate definitions.</p>
+            <p className="text-xs text-[#718096]">No definitions available.</p>
           )}
         </div>
+      </div>
+
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Zap size={14} className="text-[#E53E3E]" /> Important Topics
+        </h3>
+        {renderList(knowledgeData.importantTopics, 'No important topics identified.')}
+      </div>
+
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Target size={14} className="text-[#3182CE]" /> Formulae
+        </h3>
+        {renderList(knowledgeData.formulae, 'No formulae found.')}
+      </div>
+
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Activity size={14} className="text-[#805AD5]" /> Relationships
+        </h3>
+        {renderList(knowledgeData.relationships, 'No relationships extracted.')}
+      </div>
+
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <BookOpen size={14} className="text-[#D69E2E]" /> Dependencies
+        </h3>
+        {renderList(knowledgeData.dependencies, 'No dependencies extracted.')}
+      </div>
+
+      <div className="bg-white rounded-[16px] p-4 border border-[#E2E8F0] shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Brain size={14} className="text-[#38A169]" /> Learning Graph
+        </h3>
+        {renderList(knowledgeData.learningGraph, 'No learning graph generated.')}
       </div>
     </div>
   );
@@ -184,7 +238,7 @@ const CATEGORIES = [
 ];
 
 const ArtifactsView = () => {
-  const { artifacts, fetchArtifacts } = useArtifactStore();
+  const { artifacts, fetchArtifacts, isGeneratingArtifact } = useArtifactStore();
   
   useEffect(() => {
     fetchArtifacts();
@@ -199,7 +253,24 @@ const ArtifactsView = () => {
   
   return (
     <div className="space-y-6">
-      {categorized.length === 0 ? (
+      {isGeneratingArtifact && (
+        <div className="bg-white border border-[#E2E8F0] rounded-[16px] p-4 flex flex-col gap-3 shadow-sm relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+          <div className="flex gap-3 items-start">
+            <div className="w-8 h-8 rounded-lg bg-[#EDF2F7] animate-pulse shrink-0" />
+            <div className="space-y-2 flex-1">
+              <div className="h-4 bg-[#EDF2F7] rounded w-1/3 animate-pulse" />
+              <div className="h-2 bg-[#EDF2F7] rounded w-24 animate-pulse" />
+            </div>
+          </div>
+          <div className="space-y-2 mt-2">
+            <div className="h-2 bg-[#EDF2F7] rounded w-full animate-pulse" />
+            <div className="h-2 bg-[#EDF2F7] rounded w-5/6 animate-pulse" />
+          </div>
+        </div>
+      )}
+      
+      {categorized.length === 0 && !isGeneratingArtifact ? (
         <div className="text-center p-6 bg-white border border-[#E2E8F0] rounded-[16px] shadow-sm">
           <FileText size={24} className="mx-auto text-[#A0AEC0] mb-2" />
           <p className="text-sm font-medium text-[#718096] mb-2">Your AI Library is empty.</p>

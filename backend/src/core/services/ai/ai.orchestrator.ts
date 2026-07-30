@@ -69,7 +69,7 @@ export class AIOrchestrator {
 
     // Apply Global Multilingual Foundation
     const { AIPromptBuilder } = await import("./prompt-builder.js");
-    promptText = AIPromptBuilder.build(promptText, context);
+    promptText = AIPromptBuilder.build(promptText, context, 'artifact');
 
     // 4. Router & Provider Execution
     let rawResponse: any;

@@ -6,6 +6,7 @@ import { useKnowledgeStore } from '../../../store/knowledge.store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UploadCloud, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { workspaceEvents, EVENTS } from '../../../lib/workspace-events';
+import { apiClient } from '../../../lib/api-client';
 
 export const UploadModal = () => {
   const { isUploadModalOpen, setUploadModalOpen, queue, addToQueue, updateProgress, updateStatus } = useUploadStore();
@@ -48,11 +49,8 @@ export const UploadModal = () => {
       
       const formData = new FormData();
       formData.append("file", file);
-
-      const { apiClient } = await import('../../../lib/api-client');
       
       const res = await apiClient.post('/knowledge/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -101,7 +99,8 @@ export const UploadModal = () => {
         }
       }
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error("[UPLOAD ERROR]", error);
       updateStatus(id, 'Failed');
     }
   };

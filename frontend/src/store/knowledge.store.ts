@@ -27,6 +27,7 @@ interface KnowledgeState {
   folders: Folder[];
   activeFolderId: string | null;
   
+  setDocuments: (docs: KnowledgeDocument[]) => void;
   addDocument: (doc: KnowledgeDocument) => void;
   updateDocumentStatus: (id: string, status: KnowledgeDocument['status']) => void;
   togglePin: (id: string) => void;
@@ -37,27 +38,14 @@ interface KnowledgeState {
 }
 
 export const useKnowledgeStore = create<KnowledgeState>((set) => ({
-  documents: [
-    {
-      id: 'doc-1',
-      title: 'Physics Chapter 1 - Kinematics.pdf',
-      subject: 'Physics',
-      type: 'PDF',
-      size: 2400500,
-      uploadDate: new Date().toISOString(),
-      status: 'Indexed',
-      lastUsed: new Date().toISOString(),
-      source: 'Upload',
-      isPinned: true,
-      isFavorite: false
-    }
-  ],
+  documents: [],
   folders: [
     { id: 'f-1', name: 'Physics 101', color: 'blue' },
     { id: 'f-2', name: 'Algorithms', color: 'indigo' }
   ],
   activeFolderId: null,
   
+  setDocuments: (docs) => set({ documents: docs }),
   addDocument: (doc) => set((state) => ({ documents: [doc, ...state.documents] })),
   updateDocumentStatus: (id, status) => set((state) => ({
     documents: state.documents.map(d => d.id === id ? { ...d, status } : d)

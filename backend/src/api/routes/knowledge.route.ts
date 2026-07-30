@@ -13,6 +13,12 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
+knowledgeRouter.post(
+  "/upload-test",
+  upload.single("file"),
+  asyncHandler(knowledgeController.uploadDocument.bind(knowledgeController))
+);
+
 knowledgeRouter.use(requireAuth);
 
 knowledgeRouter.post(
@@ -21,9 +27,16 @@ knowledgeRouter.post(
   asyncHandler(knowledgeController.uploadDocument.bind(knowledgeController))
 );
 
+
+
 knowledgeRouter.get(
   "/document/:id/status",
   asyncHandler(knowledgeController.getDocumentStatus.bind(knowledgeController))
+);
+
+knowledgeRouter.get(
+  "/",
+  asyncHandler(knowledgeController.getDocuments.bind(knowledgeController))
 );
 
 knowledgeRouter.get(

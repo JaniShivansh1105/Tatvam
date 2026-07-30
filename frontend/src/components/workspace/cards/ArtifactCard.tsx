@@ -5,20 +5,23 @@ import { useConversationStore } from '../../../store/conversation.store';
 import { apiClient } from '../../../lib/api-client';
 import { toast } from 'react-hot-toast';
 import { workspaceEvents, EVENTS } from '../../../lib/workspace-events';
+import { ArtifactViewerModal } from './ArtifactViewerModal';
 
 export const ArtifactCard = ({ artifact }: { artifact: any }) => {
   const { setSessionId, clearMessages, addMessage } = useConversationStore();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
-  const handleDownload = () => {
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const type = artifact.artifactType || artifact.type || 'Document';
     const filename = `${artifact.title.replace(/\s+/g, '_')}_${Date.now()}`;
     
     // Choose format based on type
-    if (type === 'Notes' || type === 'Bookmarks') {
-      downloadFile(artifact.content, `${filename}.md`, 'text/markdown');
+    if (type === 'Notes' || type === 'Bookmarks' || type === 'Smart Notes') {
+      downloadFile(typeof artifact.content === 'string' ? artifact.content : JSON.stringify(artifact.content), `${filename}.md`, 'text/markdown');
     } else if (type === 'Quizzes' || type === 'Flashcards') {
-      downloadFile(artifact.content, `${filename}.json`, 'application/json');
+      downloadFile(typeof artifact.content === 'string' ? artifact.content : JSON.stringify(artifact.content, null, 2), `${filename}.json`, 'application/json');
     } else {
       // Default to PDF for others like Practice Set, Revision Sheet
       const doc = new jsPDF();
@@ -26,7 +29,7 @@ export const ArtifactCard = ({ artifact }: { artifact: any }) => {
       doc.text(artifact.title, 10, 10);
       doc.setFontSize(12);
       
-      const splitText = doc.splitTextToSize(artifact.content || "", 180);
+      const splitText = doc.splitTextToSize(typeof artifact.content === 'string' ? artifact.content : JSON.stringify(artifact.content), 180);
       doc.text(splitText, 10, 20);
       doc.save(`${filename}.pdf`);
     }
@@ -45,7 +48,8 @@ export const ArtifactCard = ({ artifact }: { artifact: any }) => {
     URL.revokeObjectURL(url);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!confirm('Delete this artifact?')) return;
     setIsDeleting(true);
     try {
@@ -59,7 +63,8 @@ export const ArtifactCard = ({ artifact }: { artifact: any }) => {
     }
   };
 
-  const handleRename = async () => {
+  const handleRename = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     const newTitle = prompt('Enter new title for artifact:', artifact.title);
     if (!newTitle || !newTitle.trim()) return;
     try {
@@ -70,7 +75,8 @@ export const ArtifactCard = ({ artifact }: { artifact: any }) => {
     }
   };
 
-  const handleOpenConversation = async () => {
+  const handleOpenConversation = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!artifact.sourceConversationId) {
       toast.error("No linked conversation found");
       return;
@@ -91,7 +97,11 @@ export const ArtifactCard = ({ artifact }: { artifact: any }) => {
   };
 
   return (
-    <div className={`bg-white border border-[#E2E8F0] rounded-[16px] overflow-hidden group hover:border-[#6C5CE7]/30 transition-all hover:shadow-md ${isDeleting ? 'opacity-50' : ''}`}>
+    <>
+    <div 
+      onClick={() => setIsViewerOpen(true)}
+      className={`bg-white border border-[#E2E8F0] rounded-[16px] overflow-hidden group hover:border-[#6C5CE7]/30 transition-all hover:shadow-md cursor-pointer ${isDeleting ? 'opacity-50' : ''}`}
+    >
       <div className="p-4 border-b border-[#E2E8F0] bg-[#F8F9FF] flex justify-between items-start">
         <div className="flex gap-3">
           <div className="w-8 h-8 rounded-lg bg-[#F0E6FF] flex items-center justify-center shrink-0 text-[#6C5CE7] border border-[#6C5CE7]/20 mt-0.5">
@@ -134,5 +144,7 @@ export const ArtifactCard = ({ artifact }: { artifact: any }) => {
         )}
       </div>
     </div>
+    {isViewerOpen && <ArtifactViewerModal artifact={artifact} onClose={() => setIsViewerOpen(false)} />}
+    </>
   );
 };

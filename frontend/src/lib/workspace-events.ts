@@ -34,4 +34,5 @@ export const EVENTS = {
   DocumentUploaded: 'DocumentUploaded',
   KnowledgeIndexed: 'KnowledgeIndexed',
   KnowledgeUpdated: 'KnowledgeUpdated',
+  TriggerChat: 'TriggerChat',
 };

@@ -36,22 +36,8 @@ export const DocumentViewer = () => {
 
   const handleAIAction = (action: string) => {
     closeViewer();
-    addMessage({
-      id: Date.now().toString(),
-      role: 'user',
-      content: `${action} based on ${activeDocument.title} (Page ${pageNumber})`
-    });
-    setGenerating(true);
-    
-    // Simulate generation triggering backend
-    setTimeout(() => {
-      addMessage({
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `I'd be happy to ${action.toLowerCase()} based on **${activeDocument.title}** (Page ${pageNumber}).`
-      });
-      setGenerating(false);
-    }, 1000);
+    const { workspaceEvents, EVENTS } = require('../../../lib/workspace-events');
+    workspaceEvents.emit(EVENTS.TriggerChat, { text: `${action} based on ${activeDocument.title} (Page ${pageNumber})` });
   };
 
   return (
@@ -99,6 +85,9 @@ export const DocumentViewer = () => {
             
             <div className="w-px h-4 bg-[#E2E8F0] mx-1" />
             
+            <button className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors" title="Search (Coming soon)">
+              <SearchIcon size={16} />
+            </button>
             <button className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors" title="Download">
               <Download size={16} />
             </button>
