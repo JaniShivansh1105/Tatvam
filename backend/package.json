@@ -29,6 +29,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0",
+    "officeparser": "^7.5.0",
     "openai": "^6.49.0",
     "pdf-parse": "^2.4.5",
     "pdfkit": "^0.19.1",

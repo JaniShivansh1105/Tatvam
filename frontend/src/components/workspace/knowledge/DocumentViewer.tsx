@@ -166,11 +166,7 @@ export const DocumentViewer = () => {
                 <div className="bg-white w-full max-w-4xl shadow-xl rounded-sm min-h-[1056px] p-12 border border-[#E2E8F0] text-left" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
                   <h1 className="text-3xl font-bold text-[#1B1D35] mb-6 border-b pb-4">{activeDocument.title}</h1>
                   <div className="prose prose-lg max-w-none text-[#4A5568]">
-                    {/* In a real implementation, we would fetch the raw text from backend and render with ReactMarkdown */}
-                    <p className="italic text-gray-500">Document content rendering...</p>
-                    {pdfUrl && (
-                      <iframe src={pdfUrl} width="100%" height="800px" className="border-0 mt-4 rounded-md bg-gray-50"></iframe>
-                    )}
+                    <TextRenderer url={pdfUrl} type={activeDocument.type} />
                   </div>
                 </div>
               )}
@@ -195,10 +191,13 @@ export const DocumentViewer = () => {
             </div>
           </aside>
         </div>
+        <TextSelectionToolbar />
       </div>
     </AnimatePresence>
   );
 };
+
+import { TextSelectionToolbar } from '../../dashboard/learning/workspace/TextSelectionToolbar';
 
 const ActionButton = ({ icon, label, onClick }: any) => (
   <button 
@@ -209,3 +208,27 @@ const ActionButton = ({ icon, label, onClick }: any) => (
     {label}
   </button>
 );
+
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+const TextRenderer = ({ url, type }: { url: string, type: string }) => {
+  const [content, setContent] = useState<string>('Loading...');
+
+  useEffect(() => {
+    if (!url) return;
+    fetch(url)
+      .then(res => res.text())
+      .then(text => setContent(text))
+      .catch(err => {
+        console.error("Failed to load text", err);
+        setContent("Failed to load document content.");
+      });
+  }, [url]);
+
+  if (type === 'Markdown') {
+    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>;
+  }
+
+  return <pre className="whitespace-pre-wrap font-sans">{content}</pre>;
+};

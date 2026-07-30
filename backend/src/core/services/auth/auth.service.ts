@@ -125,6 +125,17 @@ export class AuthService {
             ipAddress: sessionInfo.ipAddress,
           },
         },
+        userSubjects: {
+          create: {
+            name: "General Knowledge"
+          }
+        },
+        knowledgeCollections: {
+          create: {
+            name: "Default Collection",
+            isPublic: false
+          }
+        }
       },
       select: {
         ...safeUserSelect,
@@ -289,6 +300,24 @@ export class AuthService {
 
     if (!user) {
       throw new NotFoundError("User not found");
+    }
+
+    // Auto-provisioning for existing users
+    if (!user.userSubjects || user.userSubjects.length === 0) {
+      await prisma.userSubject.create({
+        data: { userId: user.id, name: "General Knowledge" }
+      });
+      user.userSubjects = await prisma.userSubject.findMany({ where: { userId: user.id } });
+    }
+
+    const defaultCollection = await prisma.knowledgeCollection.findFirst({
+      where: { ownerId: user.id, name: "Default Collection" }
+    });
+    
+    if (!defaultCollection) {
+      await prisma.knowledgeCollection.create({
+        data: { name: "Default Collection", ownerId: user.id, isPublic: false }
+      });
     }
 
     return user;

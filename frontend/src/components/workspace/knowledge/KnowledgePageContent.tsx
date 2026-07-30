@@ -28,20 +28,32 @@ export default function KnowledgePageContent() {
         const { apiClient } = await import('../../../lib/api-client');
         const res = await apiClient.get('/knowledge');
         if (res.data?.success) {
-          const docs = res.data.data.map((d: any) => ({
-            id: d.id,
-            title: d.title,
-            subject: 'Uncategorized',
-            type: d.sourceType === 'upload' ? (d.metadata?.originalName?.toLowerCase().endsWith('.pdf') ? 'PDF' : d.metadata?.originalName?.toLowerCase().endsWith('.docx') ? 'DOCX' : d.metadata?.originalName?.toLowerCase().endsWith('.pptx') ? 'PPTX' : d.metadata?.originalName?.toLowerCase().match(/\.(png|jpg|jpeg)$/) ? 'IMAGE' : 'Markdown') : 'TXT',
-            size: d.metadata?.size || 0,
-            uploadDate: d.createdAt,
-            status: d.status,
-            lastUsed: d.updatedAt,
-            source: d.sourceType,
-            isPinned: false,
-            isFavorite: false,
-            fileUrl: d.metadata?.fileUrl
-          }));
+          const docs = res.data.data.map((d: any) => {
+            let type = 'TXT';
+            const mime = d.metadata?.mimeType || '';
+            const name = (d.metadata?.originalName || '').toLowerCase();
+            
+            if (mime.includes('pdf') || name.endsWith('.pdf')) type = 'PDF';
+            else if (mime.includes('word') || name.endsWith('.docx')) type = 'DOCX';
+            else if (mime.includes('presentation') || name.endsWith('.pptx')) type = 'PPTX';
+            else if (mime.includes('image') || name.match(/\.(png|jpg|jpeg|gif)$/)) type = 'Image';
+            else if (mime.includes('markdown') || name.endsWith('.md')) type = 'Markdown';
+
+            return {
+              id: d.id,
+              title: d.title,
+              subject: 'Uncategorized',
+              type,
+              size: d.metadata?.size || 0,
+              uploadDate: d.createdAt,
+              status: d.status,
+              lastUsed: d.updatedAt,
+              source: d.sourceType,
+              isPinned: false,
+              isFavorite: false,
+              fileUrl: d.metadata?.fileUrl
+            };
+          });
           setDocuments(docs);
         }
       } catch (e) {

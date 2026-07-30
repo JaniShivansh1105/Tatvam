@@ -146,9 +146,54 @@ export class DocumentPipeline {
           }
         });
 
-        console.log(`[${artifactStageIndex}/9] ${currentStageName}\n✓ Success\n\n↓\n`);
+        console.log(`[${artifactStageIndex}/10] ${currentStageName}\n✓ Success\n\n↓\n`);
       } catch (artifactErr: any) {
-        console.warn(`[${artifactStageIndex}/9] ${currentStageName} Skipped (Non-fatal): ${artifactErr.message}\n\n↓\n`);
+        console.warn(`[${artifactStageIndex}/10] ${currentStageName} Skipped (Non-fatal): ${artifactErr.message}\n\n↓\n`);
+      }
+
+      // 6.5 Extract Knowledge Graph (Concepts, Definitions, etc)
+      currentStageName = "Extracting Knowledge Graph";
+      const extractStageIndex = 10;
+      try {
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const { env } = await import("../../config/env.js");
+        const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const combinedText = chunks.slice(0, 30).map(c => c.content).join("\n\n");
+        const prompt = `Based ONLY on the following text extracted from the user's uploaded documents, extract and generate a JSON object with these exact keys (arrays of strings or objects):
+        - "concepts" (array of strings)
+        - "definitions" (array of objects { term: string, definition: string })
+        - "formulae" (array of strings)
+        - "relationships" (array of strings)
+        - "dependencies" (array of strings)
+        - "learningGraph" (array of strings)
+        - "importantTopics" (array of strings)
+        
+        If the text doesn't contain formulae, return an empty array for it. Do NOT use any external knowledge.
+        
+        TEXT:
+        ${combinedText.substring(0, 30000)}
+        
+        Respond with ONLY the JSON object, no markdown blocks.`;
+
+        const result = await model.generateContent(prompt);
+        let responseText = result.response.text();
+        responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const extractedKnowledge = JSON.parse(responseText);
+
+        await prisma.knowledgeDocument.update({
+          where: { id: documentId },
+          data: {
+            metadata: {
+              ...(metadata || {}),
+              extractedKnowledge
+            }
+          }
+        });
+        console.log(`[${extractStageIndex}/10] ${currentStageName}\n✓ Success\n\n↓\n`);
+      } catch (extractErr: any) {
+        console.warn(`[${extractStageIndex}/10] ${currentStageName} Skipped (Non-fatal): ${extractErr.message}\n\n↓\n`);
       }
 
       // 7. Finalization

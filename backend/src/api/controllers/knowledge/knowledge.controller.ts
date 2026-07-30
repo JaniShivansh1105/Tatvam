@@ -83,6 +83,48 @@ export class KnowledgeController {
              content = "OCR extraction failed. Please ensure the document is readable.";
            }
         }
+      } else if (file.mimetype.includes("word") || file.originalname.endsWith(".docx")) {
+        try {
+          const mammoth = await import("mammoth");
+          const result = await mammoth.extractRawText({ buffer: file.buffer });
+          content = result.value;
+        } catch (e) {
+          console.error("DOCX extraction failed", e);
+          content = "Failed to extract DOCX text.";
+        }
+      } else if (file.mimetype.includes("presentation") || file.originalname.endsWith(".pptx")) {
+        try {
+          // Temporarily write to disk for officeparser since it reliably works with file paths
+          const fs = await import("fs");
+          const path = await import("path");
+          const os = await import("os");
+          const tempPath = path.join(os.tmpdir(), uniqueFileName);
+          fs.writeFileSync(tempPath, file.buffer);
+          
+          const officeparser = (await import("officeparser")).default;
+          const ast = await officeparser.parseOffice(tempPath);
+          content = (ast as any).toText ? (ast as any).toText() : String(ast);
+          fs.unlinkSync(tempPath); // cleanup
+        } catch (e) {
+          console.error("PPTX extraction failed", e);
+          content = "Failed to extract PPTX text.";
+        }
+      } else if (file.mimetype.includes("image") || file.originalname.match(/\.(png|jpg|jpeg)$/)) {
+        try {
+           const { GoogleGenerativeAI } = await import("@google/generative-ai");
+           const { env } = await import("../../../config/env.js");
+           const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
+           const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+           
+           const prompt = "Extract all text from this image. If it's a diagram, describe it along with the text. Do not summarize.";
+           const imageParts = [{ inlineData: { data: file.buffer.toString("base64"), mimeType: file.mimetype || "image/jpeg" } }];
+           
+           const result = await model.generateContent([prompt, ...imageParts]);
+           content = result.response.text() || "Failed to extract text from image.";
+        } catch (e) {
+           console.error("Image OCR failed", e);
+           content = "Image OCR extraction failed.";
+        }
       } else {
         content = file.buffer.toString("utf-8");
       }
@@ -156,57 +198,56 @@ export class KnowledgeController {
       // Fetch documents for this user
       const documents = await prisma.knowledgeDocument.findMany({
         where: { collectionId: collection.id, status: "Completed" },
-        take: 5,
+        take: 10,
         orderBy: { createdAt: 'desc' }
       });
 
-      // Fetch chunks from these documents
-      const documentIds = documents.map((d: any) => d.id);
-      
-      const chunks = await prisma.documentChunk.findMany({
-        where: {
-          version: {
-            documentId: { in: documentIds }
+      // Aggregate knowledge
+      const aggregatedData = {
+        concepts: new Set<string>(),
+        definitions: [] as any[],
+        formulae: new Set<string>(),
+        relationships: new Set<string>(),
+        dependencies: new Set<string>(),
+        learningGraph: new Set<string>(),
+        importantTopics: new Set<string>()
+      };
+
+      const seenDefs = new Set<string>();
+
+      for (const doc of documents) {
+        const metadata = doc.metadata as any;
+        if (metadata && metadata.extractedKnowledge) {
+          const ek = metadata.extractedKnowledge;
+          if (Array.isArray(ek.concepts)) ek.concepts.forEach((c: string) => aggregatedData.concepts.add(c));
+          if (Array.isArray(ek.formulae)) ek.formulae.forEach((f: string) => aggregatedData.formulae.add(f));
+          if (Array.isArray(ek.relationships)) ek.relationships.forEach((r: string) => aggregatedData.relationships.add(r));
+          if (Array.isArray(ek.dependencies)) ek.dependencies.forEach((d: string) => aggregatedData.dependencies.add(d));
+          if (Array.isArray(ek.learningGraph)) ek.learningGraph.forEach((l: string) => aggregatedData.learningGraph.add(l));
+          if (Array.isArray(ek.importantTopics)) ek.importantTopics.forEach((t: string) => aggregatedData.importantTopics.add(t));
+          
+          if (Array.isArray(ek.definitions)) {
+            ek.definitions.forEach((def: any) => {
+              if (def && def.term && !seenDefs.has(def.term.toLowerCase())) {
+                seenDefs.add(def.term.toLowerCase());
+                aggregatedData.definitions.push(def);
+              }
+            });
           }
-        },
-        take: 20
-      });
-
-      const combinedText = chunks.map((c: any) => c.content).join("\n\n");
-      
-      if (!combinedText.trim()) {
-        return res.status(200).json({ success: true, data: { concepts: [], definitions: [], formulae: [], relationships: [], dependencies: [], learningGraph: [], importantTopics: [] } });
+        }
       }
-
-      const { GoogleGenerativeAI } = await import("@google/generative-ai");
-      const { env } = await import("../../../config/env.js");
-      const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-      const prompt = `Based ONLY on the following text extracted from the user's uploaded documents, extract and generate a JSON object with these exact keys (arrays of strings or objects):
-      - "concepts" (array of strings)
-      - "definitions" (array of objects { term: string, definition: string })
-      - "formulae" (array of strings)
-      - "relationships" (array of strings)
-      - "dependencies" (array of strings)
-      - "learningGraph" (array of strings)
-      - "importantTopics" (array of strings)
-      
-      If the text doesn't contain formulae, return an empty array for it. Do NOT use any external knowledge.
-      
-      TEXT:
-      ${combinedText.substring(0, 30000)}
-      
-      Respond with ONLY the JSON object, no markdown blocks.`;
-
-      const result = await model.generateContent(prompt);
-      let responseText = result.response.text();
-      responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsedData = JSON.parse(responseText);
 
       return res.status(200).json({
         success: true,
-        data: parsedData
+        data: {
+          concepts: Array.from(aggregatedData.concepts),
+          definitions: aggregatedData.definitions,
+          formulae: Array.from(aggregatedData.formulae),
+          relationships: Array.from(aggregatedData.relationships),
+          dependencies: Array.from(aggregatedData.dependencies),
+          learningGraph: Array.from(aggregatedData.learningGraph),
+          importantTopics: Array.from(aggregatedData.importantTopics)
+        }
       });
     } catch (error: any) {
       return res.status(500).json({ success: false, error: error.message });

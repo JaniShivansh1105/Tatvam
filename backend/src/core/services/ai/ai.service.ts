@@ -97,8 +97,16 @@ Adapt your explanation length and detail level according to these preferences.`;
       // 1. Generate query embedding
       const queryVector = await embeddingProvider.embedText(userText);
       
-      // 2. Search Vector Database scoped to user (collectionId = userId)
-      const results = await vectorRepo.searchSimilar(queryVector, userId, 5);
+      // 2. Fetch user's default collection
+      const collection = await prisma.knowledgeCollection.findFirst({
+        where: { ownerId: userId, name: "Default Collection" }
+      });
+      
+      // 3. Search Vector Database scoped to user's collection
+      let results: any[] = [];
+      if (collection) {
+        results = await vectorRepo.searchSimilar(queryVector, collection.id, 5);
+      }
       
       if (results && results.length > 0) {
         ragContext = "\n\n=== RELEVANT DOCUMENTS EXTRACTED FROM STUDENT'S UPLOADS ===\n";
@@ -246,7 +254,15 @@ Adapt your explanation length and detail level according to these preferences.`;
     try {
       const { embeddingProvider, vectorRepo } = await import("../../../di/container.js");
       const queryVector = await embeddingProvider.embedText(`${artifactType} ${requestContent}`);
-      const results = await vectorRepo.searchSimilar(queryVector, userId, 10);
+      
+      const collection = await prisma.knowledgeCollection.findFirst({
+        where: { ownerId: userId, name: "Default Collection" }
+      });
+      
+      let results: any[] = [];
+      if (collection) {
+        results = await vectorRepo.searchSimilar(queryVector, collection.id, 10);
+      }
       
       if (results && results.length > 0) {
         ragContext = "\n\n=== SOURCE KNOWLEDGE (USE EXCLUSIVELY) ===\n";

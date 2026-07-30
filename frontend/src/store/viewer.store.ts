@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { KnowledgeDocument } from './knowledge.store';
 
 interface ViewerState {
@@ -13,14 +14,22 @@ interface ViewerState {
   setZoomLevel: (zoom: number) => void;
 }
 
-export const useViewerStore = create<ViewerState>((set) => ({
-  activeDocument: null,
-  isOpen: false,
-  currentPage: 1,
-  zoomLevel: 100,
-  
-  openDocument: (doc) => set({ activeDocument: doc, isOpen: true, currentPage: 1, zoomLevel: 100 }),
-  closeViewer: () => set({ activeDocument: null, isOpen: false }),
-  setCurrentPage: (page) => set({ currentPage: page }),
-  setZoomLevel: (zoom) => set({ zoomLevel: zoom })
-}));
+export const useViewerStore = create<ViewerState>()(
+  persist(
+    (set) => ({
+      activeDocument: null,
+      isOpen: false,
+      currentPage: 1,
+      zoomLevel: 100,
+      
+      openDocument: (doc) => set({ activeDocument: doc, isOpen: true, currentPage: 1 }),
+      closeViewer: () => set({ activeDocument: null, isOpen: false }),
+      setCurrentPage: (page) => set({ currentPage: page }),
+      setZoomLevel: (zoom) => set({ zoomLevel: zoom })
+    }),
+    {
+      name: 'viewer-storage',
+      partialize: (state) => ({ zoomLevel: state.zoomLevel }),
+    }
+  )
+);
