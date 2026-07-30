@@ -37,7 +37,14 @@ export const DocumentViewer = () => {
   const handleAIAction = (action: string) => {
     closeViewer();
     const { workspaceEvents, EVENTS } = require('../../../lib/workspace-events');
-    workspaceEvents.emit(EVENTS.TriggerChat, { text: `${action} based on ${activeDocument.title} (Page ${pageNumber})` });
+    workspaceEvents.emit(EVENTS.TriggerChat, { 
+      text: `${action} based on ${activeDocument.title} (Page ${pageNumber})`,
+      context: {
+        documentId: activeDocument.id,
+        pageNumber: pageNumber,
+        source: 'DocumentViewer'
+      }
+    });
   };
 
   return (
@@ -103,7 +110,7 @@ export const DocumentViewer = () => {
               animate={{ opacity: 1, y: 0 }}
               className="w-full flex justify-center"
             >
-              {activeDocument.type === 'PDF' ? (
+              {activeDocument.type === 'PDF' && (
                 <div className="shadow-xl rounded-sm border border-[#E2E8F0] bg-white overflow-hidden w-full max-w-4xl min-h-[800px] flex justify-center">
                    {pdfUrl ? (
                      <Document
@@ -134,12 +141,37 @@ export const DocumentViewer = () => {
                       </div>
                    )}
                 </div>
-              ) : (
-                <div className="bg-white w-full max-w-4xl shadow-xl rounded-sm min-h-[1056px] p-12 border border-[#E2E8F0]" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
-                  <h1 className="text-3xl font-bold text-[#1B1D35] mb-6">{activeDocument.title}</h1>
-                  <p className="text-[#4A5568] leading-relaxed mb-4">
-                    Text Document Viewer.
-                  </p>
+              )}
+
+              {activeDocument.type === 'IMAGE' && (
+                <div className="bg-white w-full max-w-4xl shadow-xl rounded-sm p-12 border border-[#E2E8F0] flex justify-center items-center" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
+                  {pdfUrl ? <img src={pdfUrl} alt={activeDocument.title} className="max-w-full h-auto rounded-md shadow-sm" /> : <p>No image available</p>}
+                </div>
+              )}
+
+              {(activeDocument.type === 'DOCX' || activeDocument.type === 'PPTX') && (
+                <div className="bg-white w-full max-w-5xl shadow-xl rounded-sm border border-[#E2E8F0] flex flex-col" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center', minHeight: '800px' }}>
+                  {pdfUrl ? (
+                    <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(pdfUrl)}`} width="100%" height="800px" frameBorder="0"></iframe>
+                  ) : (
+                    <div className="p-12 text-[#A0AEC0] flex flex-col items-center mt-20 w-full text-center">
+                      <FileText size={48} className="mb-4 opacity-50 text-[#6C5CE7]" />
+                      <p>No document file available</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(activeDocument.type === 'TXT' || activeDocument.type === 'Markdown') && (
+                <div className="bg-white w-full max-w-4xl shadow-xl rounded-sm min-h-[1056px] p-12 border border-[#E2E8F0] text-left" style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top center' }}>
+                  <h1 className="text-3xl font-bold text-[#1B1D35] mb-6 border-b pb-4">{activeDocument.title}</h1>
+                  <div className="prose prose-lg max-w-none text-[#4A5568]">
+                    {/* In a real implementation, we would fetch the raw text from backend and render with ReactMarkdown */}
+                    <p className="italic text-gray-500">Document content rendering...</p>
+                    {pdfUrl && (
+                      <iframe src={pdfUrl} width="100%" height="800px" className="border-0 mt-4 rounded-md bg-gray-50"></iframe>
+                    )}
+                  </div>
                 </div>
               )}
             </motion.div>

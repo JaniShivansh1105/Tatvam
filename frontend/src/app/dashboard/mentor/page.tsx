@@ -8,6 +8,7 @@ import { ConversationPanel } from "@/components/workspace/ConversationPanel";
 import { ContextPanel } from "@/components/workspace/ContextPanel";
 import KnowledgePageContent from "@/components/workspace/knowledge/KnowledgePageContent";
 import ResourcesPageContent from "@/components/workspace/resources/ResourcesPageContent";
+import { KnowledgeBaseTab } from "@/components/workspace/knowledge/KnowledgeBaseTab";
 import { useWorkspaceStore } from "@/store/workspace.store";
 import { MessageSquare, Library, BookOpen, Database, FolderOpen, FileText } from "lucide-react";
 import { motion } from "framer-motion";
@@ -84,12 +85,8 @@ export default function MentorPage() {
             )}
             
             {tab === 'knowledge' && (
-              <div className="w-full h-full overflow-hidden flex items-center justify-center bg-[#F8F9FF]">
-                <div className="text-center">
-                  <Database className="w-12 h-12 text-[#A0AEC0] mx-auto mb-4" />
-                  <h3 className="text-lg font-bold text-[#1B1D35]">Knowledge Base</h3>
-                  <p className="text-sm text-[#718096] mt-2">Connect and explore extracted knowledge graphs.</p>
-                </div>
+              <div className="w-full h-full overflow-hidden">
+                <KnowledgeBaseTab />
               </div>
             )}
 

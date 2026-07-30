@@ -6,7 +6,14 @@ const nextConfig: NextConfig = {
     config.resolve.alias.canvas = false;
     return config;
   },
-  turbopack: {},
+  // Remove any conflicting turbopack aliases that might cause crashes
+  experimental: {
+    turbo: {
+      resolveAlias: {
+        canvas: "./empty-module.js",
+      },
+    },
+  },
 };
 
 export default nextConfig;

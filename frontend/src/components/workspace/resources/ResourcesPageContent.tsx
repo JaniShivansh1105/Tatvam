@@ -15,9 +15,29 @@ export default function ResourcesPageContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = useState(true);
 
+  const [resources, setResources] = useState<any[]>([]);
+
   React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
+    const fetchArtifacts = async () => {
+      try {
+        const { useAuthStore } = await import('@/store/auth-store');
+        const token = useAuthStore.getState().accessToken;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/workspace/artifacts`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const result = await res.json();
+        if (result.success) {
+          setResources(result.data.artifacts);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchArtifacts();
   }, []);
 
   return (
@@ -67,9 +87,13 @@ export default function ResourcesPageContent() {
             </div>
           ) : (
             <div className={`grid gap-5 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
-              {MOCK_RESOURCES.map(res => (
+              {resources.length > 0 ? resources.map(res => (
                 <ResourceCard key={res.id} resource={res} viewMode={viewMode} />
-              ))}
+              )) : (
+                <div className="col-span-full py-12 text-center text-[#A0AEC0]">
+                  No resources generated yet. Upload a document to automatically generate study resources.
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -99,8 +123,8 @@ const ResourceCard = ({ resource, viewMode }: { resource: any, viewMode: 'grid' 
       className={`group relative bg-white border border-[#E2E8F0] rounded-[16px] hover:border-[#6C5CE7]/40 hover:shadow-md transition-all cursor-pointer overflow-hidden ${isGrid ? 'p-4 flex flex-col h-40' : 'p-3 flex items-center gap-4'}`}
     >
       <div className={`flex items-start ${isGrid ? 'flex-col gap-3 flex-1' : 'gap-4 w-full items-center'}`}>
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0] ${resource.bg} ${resource.color}`}>
-          <Icon size={24} />
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-[#E2E8F0] ${resource.artifactType === 'Flashcards' ? 'bg-yellow-500/10 text-yellow-500' : 'bg-blue-500/10 text-blue-500'}`}>
+          {resource.artifactType === 'Flashcards' ? <Zap size={24} /> : <FileText size={24} />}
         </div>
         
         <div className={`flex-1 min-w-0 ${isGrid ? 'w-full' : 'flex items-center justify-between w-full'}`}>
@@ -108,13 +132,13 @@ const ResourceCard = ({ resource, viewMode }: { resource: any, viewMode: 'grid' 
             <h3 className="font-semibold text-[#1B1D35] truncate group-hover:text-[#6C5CE7] transition-colors">
               {resource.title}
             </h3>
-            {isGrid && <p className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mt-1">{resource.type}</p>}
+            {isGrid && <p className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider mt-1">{resource.artifactType}</p>}
           </div>
           
           {!isGrid && (
             <div className="flex items-center gap-4">
-              <span className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider px-2 py-1 bg-[#F8F9FF] rounded">{resource.type}</span>
-              <span className="text-xs text-[#718096]">{resource.lastModified}</span>
+              <span className="text-xs font-bold text-[#A0AEC0] uppercase tracking-wider px-2 py-1 bg-[#F8F9FF] rounded">{resource.artifactType}</span>
+              <span className="text-xs text-[#718096]">{new Date(resource.createdAt).toLocaleDateString()}</span>
             </div>
           )}
         </div>

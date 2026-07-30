@@ -34,7 +34,7 @@ export const ConversationPanel = () => {
   useEffect(() => {
     const unsubTriggerChat = workspaceEvents.subscribe(EVENTS.TriggerChat, (payload: any) => {
       if (payload && payload.text) {
-        sendMessage(payload.text);
+        sendMessage(payload.text, payload.context);
       }
     });
     return () => {
@@ -42,7 +42,7 @@ export const ConversationPanel = () => {
     };
   }, []);
 
-  const sendMessage = async (text: string) => {
+  const sendMessage = async (text: string, additionalContext?: any) => {
     if (useConversationStore.getState().isGenerating) return;
     
     addMessage({ id: Date.now().toString(), role: 'user', content: text });
@@ -65,7 +65,8 @@ export const ConversationPanel = () => {
         body: JSON.stringify({
           messages: currentMessages.filter(m => m.id !== assistantId), // Send all messages except the empty assistant placeholder
           context: {
-            sessionId: useConversationStore.getState().sessionId
+            sessionId: useConversationStore.getState().sessionId,
+            ...(additionalContext || {})
           }
         })
       });

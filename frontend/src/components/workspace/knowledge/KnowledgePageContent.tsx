@@ -32,7 +32,7 @@ export default function KnowledgePageContent() {
             id: d.id,
             title: d.title,
             subject: 'Uncategorized',
-            type: d.sourceType === 'upload' ? (d.metadata?.originalName?.endsWith('.pdf') ? 'PDF' : d.metadata?.originalName?.endsWith('.docx') ? 'DOCX' : 'Markdown') : 'TXT',
+            type: d.sourceType === 'upload' ? (d.metadata?.originalName?.toLowerCase().endsWith('.pdf') ? 'PDF' : d.metadata?.originalName?.toLowerCase().endsWith('.docx') ? 'DOCX' : d.metadata?.originalName?.toLowerCase().endsWith('.pptx') ? 'PPTX' : d.metadata?.originalName?.toLowerCase().match(/\.(png|jpg|jpeg)$/) ? 'IMAGE' : 'Markdown') : 'TXT',
             size: d.metadata?.size || 0,
             uploadDate: d.createdAt,
             status: d.status,
