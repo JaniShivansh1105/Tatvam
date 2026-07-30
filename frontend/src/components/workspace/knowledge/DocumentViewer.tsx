@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useViewerStore } from '../../../store/viewer.store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { workspaceEvents, EVENTS } from '../../../lib/workspace-events';
 import { X, ZoomIn, ZoomOut, Search as SearchIcon, Maximize, FileText, BrainCircuit, PenTool, Bookmark, MessageSquare, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useConversationStore } from '../../../store/conversation.store';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -24,25 +25,54 @@ export const DocumentViewer = () => {
     // For this MVP, if it's not available, we use a placeholder or handle blob
     if (activeDocument) {
       setPdfUrl(activeDocument.fileUrl || '');
-      setPageNumber(1);
+      const savedPage = localStorage.getItem(`tatvam_page_${activeDocument.id}`);
+      if (savedPage && !isNaN(Number(savedPage))) {
+        setPageNumber(Number(savedPage));
+      } else {
+        setPageNumber(1);
+      }
+      
+      const savedZoom = localStorage.getItem(`tatvam_zoom_${activeDocument.id}`);
+      if (savedZoom && !isNaN(Number(savedZoom))) {
+        setZoomLevel(Number(savedZoom));
+      } else {
+        setZoomLevel(100);
+      }
     }
-  }, [activeDocument]);
+  }, [activeDocument, setZoomLevel]);
 
   if (!isOpen || !activeDocument) return null;
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
+    // Scroll to the saved page on load
+    setTimeout(() => {
+      const pageElement = document.getElementById(`pdf-page-${pageNumber}`);
+      if (pageElement) {
+        pageElement.scrollIntoView();
+      }
+    }, 100);
+  };
+
+  const scrollToPage = (p: number) => {
+    setPageNumber(p);
+    localStorage.setItem(`tatvam_page_${activeDocument.id}`, String(p));
+    const pageElement = document.getElementById(`pdf-page-${p}`);
+    if (pageElement) {
+      pageElement.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleAIAction = (action: string) => {
     closeViewer();
-    const { workspaceEvents, EVENTS } = require('../../../lib/workspace-events');
     workspaceEvents.emit(EVENTS.TriggerChat, { 
       text: `${action} based on ${activeDocument.title} (Page ${pageNumber})`,
       context: {
         documentId: activeDocument.id,
         pageNumber: pageNumber,
-        source: 'DocumentViewer'
+        source: 'DocumentViewer',
+        type: activeDocument.type,
+        title: activeDocument.title
       }
     });
   };
@@ -66,7 +96,7 @@ export const DocumentViewer = () => {
             {/* Pagination */}
             <div className="flex items-center gap-2 bg-[#F8F9FF] border border-[#E2E8F0] rounded-lg p-1">
               <button 
-                onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                onClick={() => scrollToPage(Math.max(1, pageNumber - 1))}
                 disabled={pageNumber <= 1}
                 className="p-1 text-[#A0AEC0] hover:text-[#1B1D35] disabled:opacity-50"
               >
@@ -76,7 +106,7 @@ export const DocumentViewer = () => {
                 Page {pageNumber} of {numPages || '-'}
               </span>
               <button 
-                onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))}
+                onClick={() => scrollToPage(Math.min(numPages || 1, pageNumber + 1))}
                 disabled={pageNumber >= (numPages || 1)}
                 className="p-1 text-[#A0AEC0] hover:text-[#1B1D35] disabled:opacity-50"
               >
@@ -86,9 +116,17 @@ export const DocumentViewer = () => {
 
             <div className="w-px h-4 bg-[#E2E8F0] mx-1" />
             
-            <button onClick={() => setZoomLevel(Math.max(50, zoomLevel - 10))} className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><ZoomOut size={16} /></button>
+            <button onClick={() => {
+              const newZoom = Math.max(50, zoomLevel - 10);
+              setZoomLevel(newZoom);
+              localStorage.setItem(`tatvam_zoom_${activeDocument.id}`, String(newZoom));
+            }} className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><ZoomOut size={16} /></button>
             <span className="text-xs font-bold text-[#4A5568] w-12 text-center">{zoomLevel}%</span>
-            <button onClick={() => setZoomLevel(Math.min(200, zoomLevel + 10))} className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><ZoomIn size={16} /></button>
+            <button onClick={() => {
+              const newZoom = Math.min(200, zoomLevel + 10);
+              setZoomLevel(newZoom);
+              localStorage.setItem(`tatvam_zoom_${activeDocument.id}`, String(newZoom));
+            }} className="p-1.5 text-[#A0AEC0] hover:text-[#1B1D35] rounded hover:bg-[#F8F9FF] transition-colors"><ZoomIn size={16} /></button>
             
             <div className="w-px h-4 bg-[#E2E8F0] mx-1" />
             
@@ -111,7 +149,23 @@ export const DocumentViewer = () => {
               className="w-full flex justify-center"
             >
               {activeDocument.type === 'PDF' && (
-                <div className="shadow-xl rounded-sm border border-[#E2E8F0] bg-white overflow-hidden w-full max-w-4xl min-h-[800px] flex justify-center">
+                <div 
+                  className="shadow-xl rounded-sm border border-[#E2E8F0] bg-[#F1F3F9] overflow-y-auto w-full max-w-4xl max-h-[85vh] custom-scrollbar"
+                  onScroll={(e) => {
+                    // Simple page tracking based on scroll position
+                    const target = e.target as HTMLDivElement;
+                    const scrollTop = target.scrollTop;
+                    const pageHeight = target.scrollHeight / (numPages || 1);
+                    const currentPage = Math.min(
+                      Math.max(1, Math.floor(scrollTop / pageHeight) + 1),
+                      numPages || 1
+                    );
+                    if (currentPage !== pageNumber) {
+                      setPageNumber(currentPage);
+                      localStorage.setItem(`tatvam_page_${activeDocument.id}`, String(currentPage));
+                    }
+                  }}
+                >
                    {pdfUrl ? (
                      <Document
                         file={pdfUrl}
@@ -124,17 +178,30 @@ export const DocumentViewer = () => {
                             <p className="text-xs mt-2">The file may be corrupted or unavailable.</p>
                           </div>
                         }
+                        className="flex flex-col items-center gap-4 py-4 bg-[#F1F3F9]"
                       >
-                        <Page 
-                          pageNumber={pageNumber} 
-                          scale={zoomLevel / 100} 
-                          renderTextLayer={true}
-                          renderAnnotationLayer={true}
-                          className="shadow-sm"
-                        />
+                        {Array.from(new Array(numPages || 0), (el, index) => (
+                          <div 
+                            key={`page_${index + 1}`} 
+                            id={`pdf-page-${index + 1}`}
+                            className="bg-white shadow-md border border-[#E2E8F0]"
+                          >
+                              <Page 
+                                pageNumber={index + 1} 
+                                scale={zoomLevel / 100} 
+                                renderTextLayer={true}
+                                renderAnnotationLayer={true}
+                                className="shadow-sm"
+                                onRenderTextLayerError={() => {}}
+                                onRenderAnnotationLayerError={() => {}}
+                                onGetTextError={() => {}}
+                                onGetAnnotationsError={() => {}}
+                              />
+                          </div>
+                        ))}
                       </Document>
                    ) : (
-                      <div className="p-12 text-[#A0AEC0] flex flex-col items-center mt-20 w-full text-center">
+                      <div className="p-12 text-[#A0AEC0] flex flex-col items-center mt-20 w-full text-center bg-white">
                         <FileText size={48} className="mb-4 opacity-50 text-[#6C5CE7]" />
                         <p className="text-lg font-semibold text-[#1B1D35]">No PDF File Available</p>
                         <p className="text-sm mt-2">This document does not have an active file attached.</p>

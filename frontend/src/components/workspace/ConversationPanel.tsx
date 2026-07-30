@@ -237,7 +237,7 @@ const MessageBubbleComponent = ({ message, onAction }: { message: any, onAction:
           ) : (
             <div className="prose prose-sm max-w-none text-current prose-p:leading-relaxed prose-pre:bg-[#F8F9FF] prose-pre:text-[#2D3748] prose-pre:border prose-pre:border-[#E2E8F0]">
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-                {message.content || '...'}
+                {(typeof message.content === 'string' ? message.content : JSON.stringify(message.content, null, 2)) || '...'}
               </ReactMarkdown>
               {message.isStreaming && (
                 <span className="inline-block w-1.5 h-3 bg-[#6C5CE7] ml-1 animate-pulse align-middle" />

@@ -31,7 +31,7 @@ export class DocumentPipeline {
       });
       documentId = document.id;
 
-      await this.eventBus.publish(DomainEvents.DocumentUploaded, { documentId, collectionId });
+      await this.eventBus.publish(DomainEvents.DocumentUploaded, { documentId, collectionId, userId: metadata.userId || "unknown_user", title });
 
       // Run heavy processing asynchronously without awaiting
       this._processDocumentBackground(documentId, collectionId, title, content, metadata, processingStart).catch(err => {
@@ -82,13 +82,26 @@ export class DocumentPipeline {
       const chunks: SemanticChunk[] = SemanticChunker.chunk(content, metadata);
       logStageSuccess(currentStageIndex, currentStageName);
       
+      // Helper for retries
+      const withRetry = async <T>(fn: () => Promise<T>, retries = 3): Promise<T> => {
+        let lastErr;
+        for (let attempt = 1; attempt <= retries; attempt++) {
+          try { return await fn(); }
+          catch (e) {
+            lastErr = e;
+            if (attempt < retries) await new Promise(r => setTimeout(r, 1000 * attempt));
+          }
+        }
+        throw lastErr;
+      };
+
       // 4. Embedding
       currentStageName = "Embedding Generation";
       currentStageIndex = 7;
       await this.knowledgeRepo.updateDocumentStatus(documentId, currentStageName);
       const embedStart = Date.now();
       const textsToEmbed = chunks.map(c => c.content);
-      const embeddings = await this.embeddingProvider.embedBatch(textsToEmbed);
+      const embeddings = await withRetry(() => this.embeddingProvider.embedBatch(textsToEmbed));
       const embedDuration = Date.now() - embedStart;
       
       await this.eventBus.publish(DomainEvents.EmbeddingsGenerated, { documentId, count: embeddings.length, embedDuration });
@@ -119,10 +132,11 @@ export class DocumentPipeline {
       // 6. Auto-Generating Resources (Part 7: Resources Tab)
       currentStageName = "Auto-Generating Resources";
       const artifactStageIndex = 9;
-      try {
-        const { aiService } = await import("../../di/container.js");
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStageName);
+      const { aiService } = await import("../../di/container.js");
+      
+      await withRetry(async () => {
         const flashcardsArtifact = await aiService.generateStudyArtifact(userId, "Flashcards", `Important concepts from ${title}`);
-        
         await prisma.educationalArtifact.create({
           data: {
             title: flashcardsArtifact.title,
@@ -145,20 +159,19 @@ export class DocumentPipeline {
             ownerId: userId
           }
         });
-
-        console.log(`[${artifactStageIndex}/10] ${currentStageName}\n✓ Success\n\n↓\n`);
-      } catch (artifactErr: any) {
-        console.warn(`[${artifactStageIndex}/10] ${currentStageName} Skipped (Non-fatal): ${artifactErr.message}\n\n↓\n`);
-      }
+      }, 3);
+      console.log(`[${artifactStageIndex}/10] ${currentStageName}\n✓ Success\n\n↓\n`);
 
       // 6.5 Extract Knowledge Graph (Concepts, Definitions, etc)
       currentStageName = "Extracting Knowledge Graph";
       const extractStageIndex = 10;
-      try {
+      await this.knowledgeRepo.updateDocumentStatus(documentId, currentStageName);
+      
+      await withRetry(async () => {
         const { GoogleGenerativeAI } = await import("@google/generative-ai");
         const { env } = await import("../../config/env.js");
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest", generationConfig: { responseMimeType: "application/json" } });
 
         const combinedText = chunks.slice(0, 30).map(c => c.content).join("\n\n");
         const prompt = `Based ONLY on the following text extracted from the user's uploaded documents, extract and generate a JSON object with these exact keys (arrays of strings or objects):
@@ -179,7 +192,6 @@ export class DocumentPipeline {
 
         const result = await model.generateContent(prompt);
         let responseText = result.response.text();
-        responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         const extractedKnowledge = JSON.parse(responseText);
 
         await prisma.knowledgeDocument.update({
@@ -191,13 +203,11 @@ export class DocumentPipeline {
             }
           }
         });
-        console.log(`[${extractStageIndex}/10] ${currentStageName}\n✓ Success\n\n↓\n`);
-      } catch (extractErr: any) {
-        console.warn(`[${extractStageIndex}/10] ${currentStageName} Skipped (Non-fatal): ${extractErr.message}\n\n↓\n`);
-      }
+      }, 3);
+      console.log(`[${extractStageIndex}/10] ${currentStageName}\n✓ Success\n\n↓\n`);
 
       // 7. Finalization
-      await this.knowledgeRepo.updateDocumentStatus(documentId, "Completed"); // Used 'Completed' to match getKnowledgeContext query
+      await this.knowledgeRepo.updateDocumentStatus(documentId, "Completed");
       
       const totalDuration = Date.now() - processingStart;
       
@@ -210,7 +220,7 @@ export class DocumentPipeline {
         totalDuration 
       });
 
-      await this.eventBus.publish(DomainEvents.KnowledgeIndexed, { documentId, totalDuration });
+      await this.eventBus.publish(DomainEvents.KnowledgeIndexed, { documentId, totalDuration, userId, title });
     } catch (error: any) {
       console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
       console.log(`FAILED DURING:\n`);

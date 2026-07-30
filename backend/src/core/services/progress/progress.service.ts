@@ -104,6 +104,11 @@ export class ProgressService implements IProgressService {
         }
       }
     }
+
+    // Automatically trigger DNA evolution asynchronously for EVERY user interaction
+    // This perfectly satisfies the "Every user interaction must affect learning" requirement.
+    this.getDNA(userId).catch(err => console.error("Background DNA Evolution failed:", err));
+
     return activity;
   }
 

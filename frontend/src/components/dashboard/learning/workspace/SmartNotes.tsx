@@ -150,7 +150,7 @@ export function SmartNotes() {
                     </div>
 
                     <div className="prose prose-sm max-w-none text-[#4A5568] mb-3 line-clamp-4 leading-relaxed prose-p:my-1 prose-headings:my-1 prose-ul:my-1">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.text}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{typeof note.text === 'string' ? note.text : JSON.stringify(note.text, null, 2)}</ReactMarkdown>
                     </div>
                     
                     {note.summary && (

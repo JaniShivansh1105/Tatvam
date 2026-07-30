@@ -58,25 +58,62 @@ const renderArtifactContent = (artifact: any) => {
     return <FlashcardViewer flashcards={artifact.content} />;
   }
   
-  if (type === 'Smart Notes' || type === 'Notes') {
-    return <MarkdownViewer content={artifact.content} />;
-  }
-
-  // Fallback
-  return (
-    <div className="bg-white rounded-xl p-6 border border-[#E2E8F0] shadow-sm">
-      <pre className="whitespace-pre-wrap text-sm text-[#4A5568] font-mono bg-[#F8F9FF] p-4 rounded-lg border border-[#E2E8F0]">
-        {typeof artifact.content === 'string' ? artifact.content : JSON.stringify(artifact.content, null, 2)}
-      </pre>
-    </div>
-  );
+  // For Notes, Quizzes, Practice Sets, and Bookmarks, use the MarkdownViewer
+  // as requested by the user to "Just show the user only and only the content... just like Bookmarks"
+  return <MarkdownViewer content={artifact.content} />;
 };
 
-const MarkdownViewer = ({ content }: { content: string }) => {
+const MarkdownViewer = ({ content }: { content: any }) => {
+  let stringContent = "";
+  let parsedContent = content;
+
+  // If content is a JSON string, try to parse it first
+  if (typeof content === 'string') {
+    try {
+      parsedContent = JSON.parse(content);
+    } catch (e) {
+      parsedContent = content; // Keep as string if it's not valid JSON
+    }
+  }
+
+  if (typeof parsedContent === 'string') {
+    stringContent = parsedContent;
+  } else if (parsedContent) {
+    if (parsedContent.sections && Array.isArray(parsedContent.sections)) {
+      // Handle Smart Notes
+      stringContent = parsedContent.sections.map((sec: any) => `### ${sec.heading}\n${sec.details}`).join('\n\n');
+    } else if (parsedContent.questions && Array.isArray(parsedContent.questions)) {
+      // Handle Quizzes and Practice Sets
+      stringContent = parsedContent.questions.map((q: any, i: number) => {
+        let md = `**Q${i + 1}: ${q.question}**\n\n`;
+        if (q.options && Array.isArray(q.options)) {
+          q.options.forEach((opt: string, idx: number) => {
+            md += `- ${opt}\n`;
+          });
+          md += '\n';
+        }
+        let ans = q.answer || q.correct_answer;
+        if (typeof ans === 'number' && q.options) {
+          ans = q.options[ans];
+        }
+        if (ans) {
+          md += `*Answer: ${ans}*\n`;
+        }
+        if (q.explanation) {
+          md += `\n_Explanation: ${q.explanation}_\n`;
+        }
+        return md;
+      }).join('\n\n---\n\n');
+    } else {
+      // Generic fallback
+      stringContent = parsedContent.body || parsedContent.content || parsedContent.text || parsedContent.markdown || JSON.stringify(parsedContent, null, 2);
+    }
+  }
+  
   return (
-    <div className="bg-white rounded-[16px] p-8 border border-[#E2E8F0] shadow-sm max-w-3xl mx-auto prose prose-sm max-w-none prose-headings:text-[#1B1D35] prose-p:text-[#4A5568] prose-p:leading-relaxed prose-pre:bg-[#F8F9FF] prose-pre:text-[#2D3748] prose-pre:border prose-pre:border-[#E2E8F0]">
+    <div className="bg-white rounded-[16px] p-8 border border-[#E2E8F0] shadow-sm max-w-3xl mx-auto prose prose-sm max-w-none prose-headings:text-[#1B1D35] prose-p:text-[#4A5568] prose-p:leading-relaxed prose-pre:bg-[#F8F9FF] prose-pre:text-[#2D3748] prose-pre:border prose-pre:border-[#E2E8F0] prose-li:text-[#4A5568]">
       <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-        {content}
+        {stringContent}
       </ReactMarkdown>
     </div>
   );

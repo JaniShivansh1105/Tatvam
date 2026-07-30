@@ -71,7 +71,7 @@ export class KnowledgeController {
              const { GoogleGenerativeAI } = await import("@google/generative-ai");
              const { env } = await import("../../../config/env.js");
              const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
-             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+             const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
              
              const prompt = "Extract all text from this document accurately. Preserve headings, paragraphs, and lists. Do not summarize.";
              const imageParts = [{ inlineData: { data: file.buffer.toString("base64"), mimeType: "application/pdf" } }];
@@ -114,7 +114,7 @@ export class KnowledgeController {
            const { GoogleGenerativeAI } = await import("@google/generative-ai");
            const { env } = await import("../../../config/env.js");
            const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
-           const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+           const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
            
            const prompt = "Extract all text from this image. If it's a diagram, describe it along with the text. Do not summarize.";
            const imageParts = [{ inlineData: { data: file.buffer.toString("base64"), mimeType: file.mimetype || "image/jpeg" } }];

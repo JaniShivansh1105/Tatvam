@@ -3,10 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { Sparkles, BrainCircuit, Bookmark as BookmarkIcon, Edit3, Volume2, Globe2 } from "lucide-react";
 import { useEngineStore } from "@/store/engine-store";
+import { useViewerStore } from "@/store/viewer.store";
+import { workspaceEvents, EVENTS } from "@/lib/workspace-events";
 
 export function TextSelectionToolbar() {
   const [selection, setSelection] = useState<{ text: string, x: number, y: number } | null>(null);
   const { addNote, addBookmark, activeSectionId } = useEngineStore();
+  const { activeDocument } = useViewerStore();
 
   useEffect(() => {
     const handleSelection = () => {
@@ -56,7 +59,32 @@ export function TextSelectionToolbar() {
     >
       <button 
         onClick={() => handleAction(() => {
-          window.dispatchEvent(new CustomEvent('open-ai-mentor', { detail: { query: selection.text, mode: 'Explain Simply' } }));
+          let pageNumber = 1;
+          if (activeDocument) {
+            const savedPage = localStorage.getItem(`tatvam_page_${activeDocument.id}`);
+            if (savedPage) pageNumber = Number(savedPage);
+          }
+          const context = activeDocument ? {
+            title: activeDocument.title,
+            pageNumber,
+            documentId: activeDocument.id,
+            type: activeDocument.type
+          } : undefined;
+
+          // For Learn flow
+          window.dispatchEvent(new CustomEvent('open-ai-mentor', { 
+            detail: { 
+              query: selection.text, 
+              mode: 'Explain Simply',
+              context
+            } 
+          }));
+          
+          // For Workspace flow
+          workspaceEvents.emit(EVENTS.TriggerChat, { 
+            text: `Explain simply: "${selection.text}"`,
+            context
+          });
         })}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors group"
       >

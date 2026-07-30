@@ -87,6 +87,10 @@ Adapt your explanation length and detail level according to these preferences.`;
       }
     }
 
+    if (context.documentId) {
+      lessonContext += `\nThe student is currently viewing a document titled: "${context.title}" (Type: ${context.type}) at Page ${context.pageNumber}. Contextualize your answers heavily around this document.`;
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // RAG RETRIEVAL: Retrieve relevant chunks from the Knowledge Engine
     // ─────────────────────────────────────────────────────────────────
@@ -330,7 +334,7 @@ ${ragContext}
         const { GoogleGenerativeAI } = await import("@google/generative-ai");
         const { env } = await import("../../../config/env.js");
         const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
         const prompt = `Translate the following ${format === 'html' ? 'HTML content' : 'text'} into ${targetLanguage}. 
 CRITICAL RULES:
 1. If it is HTML, preserve ALL HTML tags, classes, and structure exactly. Only translate the text inside the tags.

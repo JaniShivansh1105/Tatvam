@@ -81,13 +81,13 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
 
   useEffect(() => {
     const handleOpenMentor = (e: CustomEvent) => {
-      const { query, mode } = e.detail || {};
+      const { query, mode, context } = e.detail || {};
       if (query && mode === 'Explain Simply') {
-        handleSend(`Explain simply: "${query}"`);
+        handleSend(`Explain simply: "${query}"`, context);
       } else if (query && mode === 'Ask AI') {
         setInput(`Regarding "${query}": `);
       } else if (query && mode === 'Translate') {
-        handleSend(`Translate this into ${useEngineStore.getState().language}: "${query}"`);
+        handleSend(`Translate this into ${useEngineStore.getState().language}: "${query}"`, context);
       }
     };
 
@@ -95,7 +95,7 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
     return () => window.removeEventListener('open-ai-mentor' as any, handleOpenMentor);
   }, []);
 
-  const handleSend = async (text: string) => {
+  const handleSend = async (text: string, extraContext?: any) => {
     if (!text.trim()) return;
     
     const newMessages = [...messages, { role: "user" as const, text }];
@@ -118,7 +118,8 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
             strategy,
             lessonId: currentLessonId || undefined,
             lessonTitle: "Current Lesson",
-            learningState: dna
+            learningState: dna,
+            ...extraContext
           }
         })
       });
@@ -274,10 +275,10 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
                     : "bg-white text-[#2D3748] border border-[rgba(108,92,231,0.12)] rounded-tl-sm"
                 }`}>
                   
-                  {msg.role === "ai" && !msg.isStreaming && idx > 0 ? (
+                      {msg.role === "ai" && !msg.isStreaming && idx > 0 ? (
                     <div className="flex flex-col gap-3">
                       <div className="prose prose-sm max-w-none text-current prose-p:leading-relaxed prose-pre:bg-[#F8F9FF] prose-pre:text-[#2D3748] prose-pre:border prose-pre:border-[#E2E8F0]">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text, null, 2)}</ReactMarkdown>
                       </div>
                       <div className="p-3 bg-[#F8F9FF] rounded-xl border border-[#E2E8F0] text-[12.5px] text-[#4A5568]">
                         <span className="font-bold text-[#6C5CE7]">Pedagogical Strategy:</span> {currentStrategy || "Adaptive Explanation"}
@@ -287,10 +288,10 @@ export function AIMentorPanel({ isOpen, onClose }: AIMentorPanelProps) {
                     <>
                       {msg.role === "ai" ? (
                         <div className="prose prose-sm max-w-none text-current prose-p:leading-relaxed">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text, null, 2)}</ReactMarkdown>
                         </div>
                       ) : (
-                        msg.text
+                        typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)
                       )}
                       {msg.isStreaming && (
                         <span className="inline-flex items-center ml-2 gap-1 align-middle">
