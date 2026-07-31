@@ -298,38 +298,42 @@ journey
 
 ```mermaid
 graph TD
-    Req[User Request] --> Interceptor[Attach X-Preferred-Language]
-    Interceptor --> Controller[Extract Language]
-    Controller --> Service[Inject System Prompt Constraint]
-    Service --> LLM[Native Generation (No Post-Translation)]
-    LLM --> UI[Client Renders in Preferred Language]
+    Req[User Request] --> Interceptor[Attach Preferred Language Header]
+    Interceptor --> Controller[Extract Preferred Language]
+    Controller --> Service[Inject Language Instructions]
+    Service --> LLM[Generate Response in Preferred Language]
+    LLM --> UI[Render Response]
 ```
 
 ### 5.14 Application Architecture
 
 ```mermaid
 graph TD
-    subgraph Frontend (Next.js)
-        UI[React Components]
-        State[Zustand Stores]
-        Cache[React Query]
-    end
-    subgraph Backend (Express)
-        Routes[API Routes]
-        UseCases[Business Logic]
-        Services[External Integrations]
-    end
-    subgraph Data
-        Prisma[ORM Layer]
-        PG[(Postgres)]
-    end
-    UI <--> State
-    State <--> Cache
-    Cache <--> Routes
-    Routes <--> UseCases
-    UseCases <--> Services
-    UseCases <--> Prisma
-    Prisma <--> PG
+
+subgraph Frontend
+    UI[React Components]
+    State[Zustand Stores]
+    Cache[React Query]
+end
+
+subgraph Backend
+    Routes[API Routes]
+    UseCases[Business Logic]
+    Services[External Integrations]
+end
+
+subgraph Database
+    Prisma[Prisma ORM]
+    PG[(PostgreSQL)]
+end
+
+UI <--> State
+State <--> Cache
+Cache <--> Routes
+Routes <--> UseCases
+UseCases <--> Services
+UseCases <--> Prisma
+Prisma <--> PG
 ```
 
 ### 5.15 Database Relationships (High Level)
