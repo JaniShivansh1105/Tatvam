@@ -66,16 +66,6 @@ function LoginContent() {
       if (!user.onboardingCompleted) {
         router.push(ROUTES.ONBOARDING || "/onboarding");
       } else {
-        // Pre-warm React Query cache synchronously right before pushing
-        queryClient.prefetchQuery({
-          queryKey: ["dashboard", user.id],
-          queryFn: async () => {
-            const res = await apiClient.get("/content/dashboard");
-            return res.data.data;
-          },
-          staleTime: 1000 * 60 * 5,
-        });
-        
         router.push(ROUTES.DASHBOARD.HOME);
       }
     } catch (error: any) {

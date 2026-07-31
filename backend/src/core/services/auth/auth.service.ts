@@ -165,14 +165,17 @@ export class AuthService {
       select: {
         ...safeUserSelect,
         hashedPassword: true,
-        profile: true,
-        preference: {
-          include: {
-            language: true,
-          },
+        profile: {
+          select: {
+            country: true,
+            preferredLanguage: true,
+          }
         },
-        learningDNA: true,
-        userSubjects: true,
+        learningDNA: {
+          select: {
+            id: true
+          }
+        }
       },
     });
 
