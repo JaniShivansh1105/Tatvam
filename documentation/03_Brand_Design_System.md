@@ -1,145 +1,115 @@
-# 03. Brand & Design System
+# Brand & Design System
 
-> **Responsibility:** This document explains *HOW* Tatvam looks. To understand the underlying technical infrastructure, refer to [04. System Architecture](./04_System_Architecture.md).
-
----
-
-## 🎨 Core Aesthetics
-
-Tatvam's visual language is defined by **Calmness**, **Clarity**, and **Focus**. 
-The UI must never compete with the learning material for the student's attention.
-
-> [!IMPORTANT]
-> A student using Tatvam should feel their heart rate drop. The design must actively lower anxiety.
+**Document Purpose:** To outline the visual identity, UI components, and design philosophy of the Tatvam platform.
+**Scope:** Typography, colors, layouts, accessibility, and component usage.
+**Audience:** UI/UX Designers, Frontend Engineers.
+**Revision Information:** v2.0 - Finalized Enterprise Design System
 
 ---
 
-## 🔤 Typography
+## 1. Brand Philosophy
 
-Typography is the absolute core of our interface. Because reading is fundamental to studying, the text must be flawless.
+Tatvam's design philosophy is rooted in **Focus, Elegance, and Intelligence.**
+The platform must feel premium, frictionless, and deeply calming to reduce the cognitive load associated with intense learning.
 
-| Hierarchy | Font Family | Weight | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Display** | `Inter` | SemiBold | Major section headers. |
-| **Body** | `Inter` | Regular | Long-form reading materials and chat. |
-| **Monospace** | `JetBrains Mono` | Regular | Code snippets and technical definitions. |
-
----
-
-## 🖌️ Color Palette
-
-We reject high-dopamine, vibrant color schemes. We embrace muted, natural tones.
-
-```text
- ┌───────────────┐ ┌───────────────┐ ┌───────────────┐
- │ Primary       │ │ Secondary     │ │ Surface       │
- │ #0A0A0A       │ │ Ink Black     │ │ #FAFAFA       │
- │               │ │               │ │ Paper White   │
- └───────────────┘ └───────────────┘ └───────────────┘
-```
-*(Note: Colors refined for elegance. Secondary adjusted.)*
-
-- **Accents:** Used *exclusively* to indicate semantic meaning (e.g., green for mastery, soft amber for active focus).
-- **Backgrounds:** We prefer off-whites over harsh stark white to reduce eye strain during long study sessions.
+- **Minimalism over Clutter:** White space is utilized aggressively to isolate educational content.
+- **Dynamic Interaction:** Micro-animations provide tactile feedback without distracting the user.
+- **Glassmorphism & Depth:** Soft shadows and blurred backdrops are used to create hierarchy without harsh borders.
 
 ---
 
-## 📐 Spatial System (The 8pt Grid)
+## 2. Color Palette
 
-Whitespace is not empty space; it is the breathing room a student needs to process complex information.
+The color system is designed to be accessible, high-contrast, and modern. We utilize a vibrant primary accent against soft neutrals.
 
-- **Micro (4px, 8px):** Component internals (button padding).
-- **Macro (16px, 24px):** Component grouping (lists, form fields).
-- **Layout (48px, 64px, 128px):** Major sections and reading widths.
-
-> [!TIP]
-> The line length (measure) for body text should never exceed 65-75 characters to ensure maximum reading comprehension.
-
----
-
-## 🎭 Animation & Motion
-
-- **Fade & Slide:** Transitions should be subtle and smooth (e.g., `200ms ease-out`).
-- **No Bouncing:** Avoid spring animations that feel overly playful or distracting.
-- **Meaningful:** Motion should only occur to explain a state change (e.g., a concept successfully moving into the knowledge graph).
-
----
-
-## ♿ Accessibility First
-
-Beautiful design is worthless if it excludes learners.
-
-- **Contrast:** All text must strictly adhere to WCAG 2.1 AA contrast ratios (4.5:1).
-- **Focus States:** Keyboard navigation must have highly visible, beautiful focus rings.
-- **Screen Readers:** Semantic HTML structure is non-negotiable. 
-
----
-
-## 🗣️ Product Intelligence: Voice & Tone
-
-### 11. The Mentor Personality
-
-The AI Mentor is the voice of Tatvam. It must feel profoundly human, deeply empathetic, and highly competent.
-
-**It must NOT sound:** Like ChatGPT (robotic, overly eager, utilizing generic filler words like "Certainly!").
-**It must NOT sound:** Like a strict, condescending professor.
-
-| Attribute | Implementation Standard |
-| :--- | :--- |
-| **Tone** | Calm, assuring, patient, and intellectually rigorous. |
-| **Teaching Style** | Socratic. It asks guiding questions rather than delivering monologues. |
-| **Handling Mistakes** | Normalizes failure. "That's a very common trap. Let's look at why that assumption breaks down here." |
-| **Giving Hints** | Progressive disclosure. It gives the smallest possible hint required to unblock the student. |
-| **Handling Uncertainty** | Absolute transparency. "I'm not completely certain about the syntax for that specific edge case. Let's verify it." |
-
-> [!NOTE]
-> The UI design (colors, spacing) provides the *physical* calmness; the Mentor Personality provides the *emotional* calmness.
-
----
-
-## 🧩 UX Blueprint: Components & Behavior
-
-This section defines the structural and interactive blueprints that UI designers will use to construct the application.
-
-### 6. Component Inventory (Conceptual)
-
-These are the reusable product building blocks. They define *what* exists before we define exactly how it looks in code.
-
-| Component | Purpose | Key Elements |
+| Token | Hex Code | Usage |
 | :--- | :--- | :--- |
-| **Learning Card** | Displays a subject or module overview. | Title, Progress Bar, Next Action button. |
-| **Concept Card** | Explains a single, atomic micro-concept. | Title, Short Description, "Explain" button. |
-| **Mastery Ring** | Visual indicator of understanding. | Circular progress (0-100%), color-coded (Red ──▶ Green). |
-| **Progress Timeline** | Shows historical learning momentum. | Vertical/Horizontal axis, Data points, Milestones. |
-| **AI Response Block** | Renders the Mentor's Socratic output. | Markdown renderer, Code block, KaTeX renderer. |
-| **Quiz Card** | Renders a surgical micro-assessment. | Question text, Interactive inputs, Submit button. |
-| **Revision Card** | Prompts the user to revisit a decaying concept. | Warning icon, Concept Name, "Revise Now" CTA. |
-| **Achievement Card** | Subtle acknowledgement of a milestone. | Minimal icon, text. No flashy animations. |
-| **Notification Banner** | System alerts (e.g., offline mode). | Severity color (amber/grey), succinct text. |
-| **Search Module** | Global entry point for queries. | Text input, fuzzy search results dropdown. |
-| **Language Selector** | Instantly switches the UI and AI locale. | Flag/Locale abbreviation, Dropdown list. |
-
-### 7. Responsive Strategy
-
-Tatvam is a fluid application. Learning happens on a phone on a bus, and on a desktop in a library.
-
-| Device | Behavior Strategy |
-| :--- | :--- |
-| **Mobile (Portrait)** | Single-column. Navigation moves to a bottom tab bar. AI chat takes full screen when active. Touch targets minimum 44x44px. |
-| **Tablet** | Two-column layout. Split view (e.g., Content on left, AI Mentor on right). Sidebar navigation collapsible. |
-| **Desktop** | Three-column maximum (Navigation ──▶ Content ──▶ Persistent AI Panel). Maximum reading width clamped to 75ch. |
-
-### 8. Accessibility (A11y) Blueprint
-
-Accessibility is not an afterthought; it is a foundational pillar.
-
-- **Keyboard Navigation:** Every interactive element must be reachable via `Tab`. The `Enter` and `Space` keys must trigger primary actions.
-- **Screen Reader Support:** All non-decorative elements require `aria-label` or `aria-describedby`. The AI Mentor chat stream must utilize `aria-live="polite"` to announce new incoming messages without interrupting the user.
-- **Color Contrast:** Strict WCAG 2.1 AA (4.5:1 for normal text, 3:1 for large text).
-- **Touch Targets:** Minimum 44x44 CSS pixels.
-- **Focus States:** High-contrast, highly visible focus rings (e.g., 2px solid blue offset) are mandatory. Default browser outlines are insufficient.
-- **Multilingual Accessibility:** RTL (Right-to-Left) layout support is structurally mandated for future languages (e.g., Arabic, Hebrew).
+| **Primary Accent** | `#6C5CE7` | Primary buttons, active states, AI highlights. |
+| **Primary Hover** | `#5A4FCF` | Button hover states, intense interactive elements. |
+| **Background (Light)**| `#FAFAFA` | Main application background. |
+| **Surface (Light)** | `#FFFFFF` | Cards, modals, sidebars. |
+| **Text Primary** | `#1B1D35` | Headings, primary body text. |
+| **Text Secondary** | `#4A5568` | Subtitles, labels, metadata. |
+| **Success (Green)** | `#38A169` | Passed quizzes, correct answers, positive notifications. |
+| **Error (Red)** | `#E53E3E` | Validation errors, failed quizzes, destructive actions. |
 
 ---
 
-For the actual features rendered by this design system, see the [Feature Specification](./05_Feature_Specification.md).
+## 3. Typography
+
+Tatvam uses modern, highly legible sans-serif fonts optimized for dense reading and UI clarity.
+
+- **Primary Font Family:** `Inter`, `system-ui`, `sans-serif`
+- **Headings (H1-H3):** Font Weight 700 (Bold) or 800 (Extra Bold) with tight tracking (`-0.02em`).
+- **Body Text:** Font Weight 400 (Regular) or 500 (Medium) with relaxed line height (`1.6`) for reading comprehension.
+
+### Scale Table
+| Element | Size (px) | Weight | Line Height |
+| :--- | :--- | :--- | :--- |
+| **H1 (Page Title)** | 28px - 32px | Bold | 1.2 |
+| **H2 (Section)** | 20px - 24px | Bold | 1.3 |
+| **H3 (Card Title)**| 16px - 18px | SemiBold | 1.4 |
+| **Body (Main)** | 15px | Regular | 1.6 |
+| **Body (Small)** | 13px | Medium | 1.5 |
+| **Micro/Labels** | 11px - 12px | Bold | 1.2 (Uppercase) |
+
+---
+
+## 4. Layout & Grid
+
+- **Max Width:** The dashboard content area is typically constrained to `1200px` to prevent uncomfortable line lengths.
+- **Spacing Scale:** We use a 4px baseline grid. Padding and margins strictly adhere to Tailwind's spacing scale (e.g., `p-4` for 16px, `gap-6` for 24px).
+- **Responsive Breakpoints:**
+  - `sm`: 640px (Mobile Landscape)
+  - `md`: 768px (Tablet)
+  - `lg`: 1024px (Small Desktop)
+  - `xl`: 1280px (Large Desktop)
+
+---
+
+## 5. UI Components
+
+### Buttons
+Buttons must have clear hierarchical distinction.
+- **Primary:** Solid background (`bg-[#6C5CE7]`), white text, soft shadow, subtle scaling on active state (`active:scale-95`).
+- **Secondary:** Transparent background, subtle border (`border-[#E2E8F0]`), text color `#4A5568`, gray hover state (`hover:bg-[#F8F9FF]`).
+- **Ghost:** No background, no border, color changes on hover. Used for tertiary actions.
+
+### Inputs & Forms
+- **Style:** Light gray background (`bg-[#F8F9FF]`), subtle border (`border-[#E2E8F0]`).
+- **Focus State:** White background, solid primary border (`focus:border-[#6C5CE7]`), zero outline ring.
+- **Labels:** Small (`13px`), Bold, dark gray (`#4A5568`), with a 8px margin bottom.
+
+### Cards
+- **Style:** Pure white surface (`bg-white`), prominent rounded corners (`rounded-2xl` or `rounded-3xl`), and a very subtle border (`border-[#E2E8F0]`).
+- **Shadows:** No harsh drop shadows. We rely on the border and negative space for separation.
+
+### Modals & Dialogs
+- **Backdrop:** Blurred glassmorphism (`backdrop-blur-sm bg-black/40`).
+- **Animation:** Slide up from bottom with a slight fade in (`animate-in fade-in slide-in-from-bottom-4 duration-300`).
+
+---
+
+## 6. Icons
+
+- **Library:** `lucide-react`
+- **Weight:** Consistent stroke width of `2px` (or `1.5px` for larger icons).
+- **Usage:** Icons are always accompanied by text unless placed inside tightly constrained toolbars (and must include `aria-label` or tooltips if standalone).
+
+---
+
+## 7. Accessibility (A11y)
+
+- **Contrast Ratios:** All text must meet WCAG AA standards (4.5:1 ratio for normal text). `#1B1D35` on `#FFFFFF` significantly exceeds this.
+- **Keyboard Navigation:** All interactive elements must be focusable. Focus rings should be visible (handled natively by browser or specifically styled via `focus-visible`).
+- **Screen Readers:** Semantic HTML must be used. `button` for actions, `a` for navigation. Aria-labels applied to icon-only buttons.
+- **Motion:** Animations are kept subtle (`duration-300`, `duration-500`) to prevent motion sickness.
+
+---
+
+## 8. Dark Mode (Vision)
+
+*(Currently, Tatvam is optimized for Light Mode. Dark Mode is planned.)*
+- **Backgrounds:** Deep blue/blacks (`#0F111A`).
+- **Surfaces:** Elevated grays (`#1A1D2D`).
+- **Accents:** Neon adjustments of the primary purple for higher contrast against dark backgrounds.

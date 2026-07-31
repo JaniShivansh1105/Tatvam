@@ -1,86 +1,58 @@
-# 08. Roadmap
+# Product Roadmap
 
-> **Responsibility:** This document explains *WHERE* the project is going. For past releases, see the [CHANGELOG](./CHANGELOG.md).
-
----
-
-## 📍 Phase 1: The Foundation (Current)
-
-Our goal is to establish an unshakeable base. No code is written until the blueprint is perfect.
-
-- [x] Define product philosophy and principles.
-- [x] Establish the documentation architecture.
-- [x] Draft System Architecture and UI guidelines.
-- [ ] Initialize repository structure and strict linting/formatting rules.
+**Document Purpose:** To outline the trajectory of the Tatvam platform from MVP to visionary future states.
+**Scope:** Short-term, mid-term, and long-term milestones.
+**Audience:** Investors, Product Managers, Engineers.
+**Revision Information:** v2.0 - Finalized Enterprise Roadmap
 
 ---
 
-## 🏗️ Phase 2: The Core Mentor (Upcoming)
+## Phase 1: The Intelligent Foundation (Completed)
 
-Building the essential intelligence loop.
+*The goal of this phase was to build a robust, scalable architecture capable of ingesting knowledge and providing zero-latency, context-aware AI interactions.*
 
-- [ ] Connect secure authentication layer.
-- [ ] Implement the Socratic AI pipeline.
-- [ ] Build the minimal Study Sanctuary UI.
-- [ ] Establish local state management for offline resilience.
-
----
-
-## 🚀 Phase 3: The Knowledge Graph
-
-Transitioning from chat to conceptual mapping.
-
-- [ ] Engineer the entity extraction system.
-- [ ] Build the visual canvas for the Knowledge Graph.
-- [ ] Implement spaced repetition algorithms for review prompts.
+| Feature | Description | Impact |
+| :--- | :--- | :--- |
+| **Authentication Core** | JWT-based stateless auth with PostgreSQL persistence. | Ensures secure tenant isolation. |
+| **RAG Pipeline** | Vector-based semantic ingestion of PDF documents. | Converts dead text into queryable knowledge. |
+| **AI Mentor (Streaming)** | Socratic conversational agent utilizing SSE. | Provides an infinitely patient 24/7 tutor. |
+| **Resource Generation** | Automated creation of Smart Notes and Flashcards. | Saves hundreds of hours of manual study prep. |
+| **Multilingual Native Engine** | Real-time AI and UI translation via interceptors. | Dissolves language barriers in technical education. |
 
 ---
 
-## 🌟 Phase 4: Expansion
+## Phase 2: Active Recall & Mastery (In Progress)
 
-Deepening the educational experience.
+*This phase shifts focus from content ingestion to content mastery, forcing the brain to engage with the material through rigorous assessment.*
 
-- [ ] Voice interaction for conversational learning.
-- [ ] Math and Code rendering engines.
-- [ ] Export functionality (Notes ──▶ PDF/Markdown).
-
-> [!NOTE]
-> Timelines are deliberately omitted. We do not rush quality. A feature ships when it achieves the standard of excellence defined in our philosophy, not an arbitrary calendar date.
+| Feature | Description | Impact |
+| :--- | :--- | :--- |
+| **Dynamic Quiz Engine** | Automated generation of multiple-choice assessments. | Enforces Active Recall. |
+| **Progress Analytics** | Basic tracking of module completion and session time. | Provides actionable study metrics. |
+| **WebRTC Audio Chat** | Voice-based interaction with the AI Mentor. | Enhances accessibility for auditory learners. |
+| **Multi-modal Ingestion** | Support for YouTube transcripts and `.docx` files. | Expands the types of ingestible curricula. |
 
 ---
 
-## 🎯 Version 1 Product Scope (The MVP)
+## Phase 3: The Adaptive Mind (Planned)
 
-The MVP defines exactly what must be built to prove Tatvam's core hypothesis: *AI can facilitate deep conceptual understanding through Socratic dialogue.*
+*This phase introduces true personalization. The system stops treating all users equally and begins adapting its pedagogical strategy dynamically.*
 
-### 🔴 P0 (Critical - Must Have for Launch)
+| Feature | Description | Impact |
+| :--- | :--- | :--- |
+| **Learning DNA** | Continuous cognitive profiling (pacing, visual preference). | Allows the AI to switch from dense text to simple analogies automatically. |
+| **Spaced Repetition (SRS)** | Algorithmic scheduling of flashcard reviews. | Interrupts the Ebbinghaus forgetting curve for permanent retention. |
+| **Knowledge Graph Viz** | Visual node-based representation of user mastery. | Gamifies learning by turning topics "green". |
+| **Emotion Detection** | Sentiment analysis on user chat prompts. | AI Mentor detects frustration and pivots to emotional scaffolding. |
 
-| Feature | Purpose | User Value | Dependencies |
-| :--- | :--- | :--- | :--- |
-| **Secure Authentication** | Identity management. | Data privacy and persistence. | Platform Foundation |
-| **The Study Sanctuary** | Distraction-free UI. | Reduces cognitive load. | Component Library |
-| **Socratic AI Mentor** | Core chat interface. | Guides understanding. | AI Orchestrator |
-| **Subject Curriculum** | Static Knowledge Model. | Gives the student a map. | Database Schema |
+---
 
-### 🟡 P1 (Important - Fast Follows)
+## Phase 4: The Global Classroom (Long-Term Vision)
 
-| Feature | Purpose | User Value | Dependencies |
-| :--- | :--- | :--- | :--- |
-| **Basic Knowledge Graph** | Tracks mastered concepts. | Visual proof of progress. | Study Sessions |
-| **Concept Deconstruction**| Breaks down pasted text. | Simplifies dense material. | Socratic Mentor |
-| **Micro-Assessments** | In-chat surgical quizzes. | Validates understanding. | AI Orchestrator |
-| **Dark Mode** | Ergonomic UI toggling. | Prevents eye strain. | Design System |
+*The final phase transforms Tatvam from a single-player companion into a massive, collaborative learning ecosystem.*
 
-### 🟢 P2 (Optional - Nice to Have in V1)
-
-| Feature | Purpose | User Value | Dependencies |
-| :--- | :--- | :--- | :--- |
-| **Spaced Repetition** | Algorithmic revision prompts. | Prevents memory decay. | Knowledge Graph |
-| **Multilingual UI** | Localized interfaces. | Accessible to wider demographics. | i18n Framework |
-
-### 🚫 Out of Scope for V1
-
-- Voice interaction (Speech-to-Text / Text-to-Speech).
-- Teacher/Institution dashboards.
-- Collaborative/multiplayer study rooms.
-- Gamification elements (leaderboards, streaks).
+| Feature | Description | Impact |
+| :--- | :--- | :--- |
+| **Shared Knowledge Hubs** | Collaborative workspaces where students share vector bases. | Enables study groups to query a shared syllabus. |
+| **AI Study Groups** | A single AI Mentor orchestrating a multi-user chat room. | Scales Socratic learning to small group environments. |
+| **Global DNA Aggregation** | Anonymized analysis of millions of Learning DNAs. | Discovers the absolute optimal pedagogical paths for specific concepts. |

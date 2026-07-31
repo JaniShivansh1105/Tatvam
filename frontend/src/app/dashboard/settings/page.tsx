@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useShallow } from "zustand/react/shallow";
 import { useEngineStore } from "@/store/engine-store";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { apiClient } from "@/lib/api-client";
 import { useMutation } from "@tanstack/react-query";
 import { useNotificationStore } from "@/store/notification.store";
@@ -271,13 +272,33 @@ export default function SettingsPage() {
                   
                   <div className="space-y-6 max-w-2xl">
                     <div className="p-4 border border-[#E2E8F0] rounded-xl">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 mb-4">
                         <div className="w-10 h-10 bg-[#F0E6FF] rounded-full flex items-center justify-center">
                           <Lock className="w-5 h-5 text-[#6C5CE7]" />
                         </div>
                         <div>
                           <h4 className="font-bold text-[#1B1D35]">Account Security</h4>
                           <p className="text-[13px] text-[#A0AEC0]">Your session is secured with JWT authorization and HTTP-only cookies.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="h-px bg-[#E2E8F0] my-4" />
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-[#F0E6FF] rounded-full flex items-center justify-center">
+                          <Shield className="w-5 h-5 text-[#6C5CE7]" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-[#1B1D35]">Legal & Compliance</h4>
+                          <p className="text-[13px] text-[#A0AEC0] mb-2">View our policies regarding data usage and learning materials.</p>
+                          <div className="flex gap-4">
+                            <Link href="/privacy-policy" target="_blank" className="text-[13px] font-bold text-[#6C5CE7] hover:underline">
+                              Privacy Policy
+                            </Link>
+                            <Link href="/terms-and-conditions" target="_blank" className="text-[13px] font-bold text-[#6C5CE7] hover:underline">
+                              Terms & Conditions
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>

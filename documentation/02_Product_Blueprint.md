@@ -1,164 +1,133 @@
-# 02. Product Blueprint
+# Product Blueprint
 
-> **Responsibility:** This document explains *WHAT* Tatvam is. To understand the visual design, refer to [03. Brand & Design System](./03_Brand_Design_System.md).
-
----
-
-## 🧩 The Core Concept
-
-Tatvam is an **AI-First Learning Companion**. It is a unified space where a student can deconstruct complex subjects, interact with a personalized mentor, and build a lasting knowledge foundation.
-
-### What Tatvam Is NOT
-- ❌ A traditional Learning Management System (LMS).
-- ❌ A wrapper around ChatGPT.
-- ❌ A generic note-taking application.
-- ❌ A school administration portal.
-
-### What Tatvam IS
-- ✅ An infinitely patient AI Mentor.
-- ✅ A calm, distraction-free study environment.
-- ✅ A conceptual map of a student's understanding.
+**Document Purpose:** To comprehensively outline every module, screen, and feature of the Tatvam platform.
+**Scope:** Covers implemented features and planned visionary modules.
+**Audience:** Product Managers, UI/UX Designers, and Engineering Leads.
+**Revision Information:** v2.0 - Finalized Enterprise Blueprint
+**Related Documents:** `05_Feature_Specification.md`, `06_User_Flows.md`
 
 ---
 
-## 🏛️ Foundational Pillars
+## 1. Product Architecture Overview
 
-### 1. The Study Sanctuary
-The primary interface where learning happens. It is minimal, completely devoid of gamified clutter, and focused entirely on the subject matter.
-
-### 2. The Socratic Mentor
-An intelligence layer that analyzes what the student knows and challenges their assumptions. It never hands out direct answers to complex problems.
-
-### 3. The Knowledge Graph
-A visual representation of everything the student has mastered, highlighting gaps in understanding and forming connections between disparate subjects.
+Tatvam is divided into two primary zones:
+1. **The Portal (Auth):** Onboarding, Identity, and Authentication.
+2. **The Workspace (Dashboard):** The core adaptive learning environment.
 
 ---
 
-## 📊 Product Matrix
+## 2. Authentication Module
 
-| Capability | Purpose | Value to Student |
-| :--- | :--- | :--- |
-| **Contextual Chat** | Socratic dialogue | Deepens understanding through guided inquiry. |
-| **Concept Parsing** | Breaking down texts | Simplifies overwhelming study materials. |
-| **Mastery Tracking** | Visualizing growth | Replaces grades with a sense of genuine progress. |
-| **Focus Mode** | Minimizing UI | Reduces cognitive load and anxiety. |
+### Implemented Features
+- **Login Screen:** Email/Password based authentication with secure JWT handling.
+- **Registration Screen:** Multi-step form capturing Name, Email, Password, and Preferred Language to immediately establish the cognitive baseline.
+- **Forgot Password Flow:** OTP-based email verification and secure password reset.
+- **Stateless Sessions:** Token persistence via HttpOnly cookies and Zustand state hydration.
 
----
-
-## 🧭 The Learning Loop
-
-The fundamental experience of using Tatvam follows a strict, repeatable loop:
-
-```text
-  [1] Encounter Concept
-        │
-        ▼
-  [2] Express Confusion ──(AI Identifies Gap)──┐
-        │                                      │
-        ▼                                      │
-  [3] Socratic Dialogue ◀──────────────────────┘
-        │
-        ▼
-  [4] "Aha!" Moment
-        │
-        ▼
-  [5] Solidify in Knowledge Graph
-```
-
-> [!NOTE]
-> Every feature we build must serve this exact loop. If a proposed feature distracts from this journey, it must be discarded.
+### Planned Features (Vision)
+- **OAuth Providers:** Google, GitHub, and Microsoft integration.
+- **WebAuthn:** Hardware-backed biometric authentication.
 
 ---
 
-## 🧬 Product Intelligence: The DNA & Structure
+## 3. Dashboard Module
 
-### 2. Student Learning DNA
+### Implemented Features
+- **Overview Screen:** A high-level hub displaying daily activity rings, recent learning sessions, and quick-resume shortcuts.
+- **Sidebar Navigation:** Contextual routing between Knowledge, Practice, Assessments, and Settings.
+- **Progress Tracking (Basic):** Tracking the number of sessions and active time.
 
-Tatvam maintains a deeply personalized, constantly evolving profile of how a student learns best. This DNA informs every AI interaction.
-
-| Attribute Category | Tracked Elements |
-| :--- | :--- |
-| **Cognitive Profile** | Learning speed, Preferred explanation style (Visual vs Analogy), Confidence baseline |
-| **Academic Context** | Current level, Active semester, Goal (e.g., "Pass Finals" vs "Deep Curiosity") |
-| **Knowledge State** | Weak concepts, Strong concepts, Historical assessment performance |
-| **Behavioral Habits** | Revision consistency, Preferred study duration, Time-of-day effectiveness |
-| **Linguistic Profile** | Preferred communication tone, Primary language, Terminology familiarity |
-
-### 3. Knowledge Model Hierarchy
-
-All knowledge in Tatvam is structured deterministically.
-
-```text
-[ Subject ]          e.g., Computer Science
-    │
-    ▼
-[ Module ]           e.g., Data Structures
-    │
-    ▼
-[ Chapter ]          e.g., Trees
-    │
-    ▼
-[ Topic ]            e.g., Binary Search Trees
-    │
-    ▼
-[ Concept ]          e.g., Node Insertion
-    │
-    ▼
-[ Micro Concept ]    e.g., Balancing logic
-    │
-    ▼
-[ Mastery Status ]   (Unseen -> Learning -> Practicing -> Mastered)
-```
-- **Responsibility:** Higher levels organize curriculum; lower levels (Concepts) are the atomic units of AI instruction and assessment.
-
-### 12. Multilingual Learning Framework
-
-Tatvam provides **native-quality educational communication**, not mechanical translation. The goal is that a student in Gujarat feels the system was built natively in Gujarati.
-
-- **Native Construction:** The AI must generate responses using natural sentence structures appropriate to the cultural and linguistic context, not translated English idioms.
-- **Mixed-Language (Code-Switching):** The AI intelligently mixes languages when necessary (e.g., explaining a complex algorithm in Hindi, but retaining strict English keywords for `public static void main`).
-- **Precision Terminology:** Mathematical notation and scientific vocabulary are maintained accurately across linguistic boundaries.
-- **Fallback Strategy:** If a deep technical concept lacks a robust localized translation, the AI defaults to the global standard (English) for the term, while surrounding the explanation in the native language.
+### Planned Features (Vision)
+- **Study Streak Widget:** Gamification through daily learning streaks.
+- **Heatmap:** GitHub-style activity heatmaps representing daily study intensity.
 
 ---
 
-## 🏗️ The Domain Model
+## 4. Knowledge Engine Module
 
-The Domain Model defines the conceptual entities within Tatvam and how they relate. This is the abstract reality of the product, independent of database tables or implementation details.
+### Implemented Features
+- **Document Upload:** Users can drag-and-drop PDFs to be ingested into the platform.
+- **Text Extraction & Chunking:** Background processing that converts PDFs into semantically relevant markdown chunks.
+- **Vector Database (PGVector):** High-dimensional storage of document embeddings.
+- **Split-Pane Viewer:** A beautifully synced UI allowing users to read the document on the left while interacting with the AI on the right.
 
-### Core Entities
-
-| Entity | Purpose & Responsibilities | Relationships |
-| :--- | :--- | :--- |
-| **Learner** | The human using the system. Owns the learning journey and all associated data. | Has exactly one `Profile`, `Language Profile`, and `Learning DNA`. |
-| **Learning DNA** | Tracks cognitive preferences, learning speed, and historical behavior. | Belongs to `Learner`. Drives `AI Memory`. |
-| **Subject ──▶ Concept** | The `Knowledge Model Hierarchy`. Defines the academic curriculum deterministically. | Independent of `Learner`, but mapped against them via `Knowledge Graph`. |
-| **Study Session** | A bounded period of learning (e.g., 45 mins). Tracks focus, goals, and outcomes. | Contains multiple `Conversations` and `Assessments`. |
-| **Conversation** | The Socratic dialogue between the Learner and the AI Mentor. | Belongs to `Study Session`. Associated with a specific `Concept`. |
-| **Assessment** | A surgical concept-check generated by the Mentor to verify understanding. | Contains `Questions` and `Answers`. Updates `Progress`. |
-| **Knowledge Graph** | The dynamic map of what a `Learner` knows, tied to the `Knowledge Model`. | Updated by `Study Session` completions. Drives `Revision Plan`. |
-| **Revision Plan** | The algorithmic spaced-repetition queue for a Learner. | Consumes data from `Knowledge Graph` and `Learning DNA`. |
-| **AI Memory** | The contextual boundary for the LLM (Permanent, Long-Term, Session, Temp). | Feeds into the `Conversation` context. |
-
-> [!NOTE]
-> All entities are strictly owned by the Learner (except the global `Subject` curriculum). The Learner lifecycle dictates the lifecycle of their associated graph.
+### Planned Features (Vision)
+- **Multi-modal Upload:** Support for YouTube video links, audio transcripts, and `.docx` files.
+- **Folder Organization:** Hierarchical storage for complex syllabi.
 
 ---
 
-## ⚡ Product Capabilities (Platform Foundations)
+## 5. AI Mentor Module
 
-Platform capabilities differ from User Features. Capabilities are the omnipresent foundations that enable features to exist effectively.
+### Implemented Features
+- **Socratic Chat:** A streaming SSE chat interface directly linked to the user's uploaded document.
+- **RAG Integration:** The AI automatically retrieves the most relevant semantic chunks from the document to ground its answers.
+- **Multilingual Support:** The AI dynamically speaks in the user's `preferredLanguage` (e.g., Gujarati, Hindi) natively, without relying on post-generation translation libraries.
+- **Pedagogical Constraints:** Strict system prompting that forces the AI to refuse direct answers to homework questions, opting for hints and analogies instead.
 
-| Capability | Application Across Platform |
-| :--- | :--- |
-| **Multilingual Learning** | Every text node and AI response must natively support localized language switching. |
-| **Security & Privacy** | AES-256 encryption at rest. Zero-retention AI processing policies. |
-| **Accessibility** | ARIA-compliant UI, high-contrast theming, and keyboard-first navigation. |
-| **Dark Mode** | First-class citizen to reduce cognitive fatigue and eye strain during late study sessions. |
-| **Synchronization** | Offline-first data capture with optimistic UI updates syncing transparently to the cloud. |
-| **Scalability** | Stateless edge-caching for curriculum; isolated compute for LLM context generation. |
-| **Voice Readiness** | UI layers designed to eventually accept audio input/output without restructuring. |
+### Planned Features (Vision)
+- **Voice Interactivity:** Real-time WebRTC audio conversations with the AI Mentor.
+- **Emotion Detection:** Sentiment analysis on user prompts to detect frustration and adjust tone accordingly.
 
 ---
 
-For technical implementation details, refer to the [System Architecture](./04_System_Architecture.md).
+## 6. Resource Generator Module
+
+### Implemented Features
+- **Smart Notes:** On-demand generation of structured, markdown-based study notes summarizing specific topics from the document.
+- **Flashcards:** Automated generation of Q&A pairs for active recall.
+- **JSON Schema Validation:** The AI output is strictly validated against a predefined Zod schema before rendering.
+
+### Planned Features (Vision)
+- **Mind Map Generation:** Visual node-based diagrams representing document concepts.
+- **Export to Notion/Anki:** One-click exporting of generated resources to external tools.
+
+---
+
+## 7. Assessment Engine Module
+
+### Implemented Features
+- **Quiz Generation:** Dynamic creation of multiple-choice questions based on the active document context.
+- **Immediate Feedback:** Real-time evaluation of answers with AI-generated explanations for incorrect choices.
+
+### Planned Features (Vision)
+- **Free-text Assessments:** Allowing users to type out essay-style answers, which the AI semantically grades against a rubric.
+
+---
+
+## 8. Settings & Profile Module
+
+### Implemented Features
+- **User Profile:** Management of display name and email.
+- **Language Preferences:** Deep configuration of Preferred Language (AI generation), Native Language, and Secondary Language. Modifying this triggers an immediate application-wide UI refresh via the Google Translate DOM injector.
+- **Theme Preferences:** Light and Dark mode toggling.
+- **Notification Preferences:** Toggling daily study reminders.
+
+### Planned Features (Vision)
+- **Data Export/Deletion:** GDPR-compliant mechanisms for users to wipe their vectors and profile data.
+
+---
+
+## 9. Learning DNA (Visionary Core)
+
+*(This entire module is currently under Planned Vision)*
+
+### The Concept
+Learning DNA is a persistent vector representing the user's cognitive profile. It tracks:
+- **Pacing Preference:** Does the user need slow, granular explanations, or high-speed conceptual overviews?
+- **Visual vs. Textual:** Does the user respond better to analogies or literal definitions?
+- **Frustration Threshold:** How many Socratic hints can the user tolerate before needing a direct explanation?
+
+### Implementation Plan
+- The AI Orchestrator will read the Learning DNA prior to generating *any* response, adjusting its system prompt dynamically.
+- The Progress Engine will continuously mutate the Learning DNA based on assessment scores and chat sentiment.
+
+---
+
+## 10. Progress & Achievements (Visionary Core)
+
+*(This entire module is currently under Planned Vision)*
+
+### The Concept
+- **Knowledge Graph:** A visual web of concepts extracted from the user's syllabus. Nodes turn from gray (unseen) to red (struggling) to green (mastered) based on assessment performance.
+- **Spaced Repetition System (SRS):** An algorithm (similar to Anki) that schedules flashcard reviews precisely when the user is about to forget the information, interrupting the Ebbinghaus forgetting curve.

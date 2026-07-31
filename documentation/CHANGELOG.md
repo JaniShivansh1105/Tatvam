@@ -1,35 +1,44 @@
 # Changelog
 
-> **Responsibility:** This document stores the release history. 
-> 
-> All notable changes to this project will be documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+All notable changes to the Tatvam platform will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
 ## [Unreleased]
 
 ### Added
-- Complete enterprise-grade documentation foundation.
-- Project Philosophy and Core Principles definitions.
-- System Architecture diagrams and specifications.
-- Comprehensive Brand and Design System guidelines.
-- Detailed User Flows and Feature Specifications.
-- Engineering and Development Rules.
+- Phase 3: Learning DNA vectors schema definition.
+- Phase 3: Knowledge Graph visualization mockups.
 
-### Changed
-- *Nothing yet.*
+---
 
-### Deprecated
-- *Nothing yet.*
+## [1.0.0] - 2026-07-31
+*Initial Enterprise Release - The Maverick Effect AI Challenge Final Build*
 
-### Removed
-- *Nothing yet.*
+### Added
+- **Authentication:** JWT-based stateless authentication with Bcrypt hashing and OTP support.
+- **Settings:** Configurable themes, notification toggles, and multi-layered language preferences.
+- **Multilingual Engine:** Instantaneous, application-wide UI translation and native AI generation via `X-Preferred-Language` interceptors.
+- **Knowledge Pipeline:** PDF ingestion, text extraction, semantic chunking, and PostgreSQL `pgvector` embedding storage.
+- **AI Orchestrator:** Secure provider management layer, currently utilizing Google Gemini `gemini-2.5-flash`.
+- **AI Mentor:** Server-Sent Events (SSE) streaming chat interface with Socratic prompting constraints.
+- **Resource Generation:** Automated Zod-validated creation of Smart Notes, Flashcards, and Quizzes from document context.
+- **Frontend Architecture:** Next.js 14 App Router, Tailwind CSS, Zustand, and React Query implementation.
+- **Documentation:** Complete overhaul of enterprise documentation, including Architectural Decision Records and Mermaid Lifecycle diagrams.
 
 ### Fixed
-- *Nothing yet.*
+- Fixed an issue where the AI Orchestrator would fall back to English on initial page hydration. Language preference is now strictly pulled from the database Profile on boot.
 
-### Security
-- *Nothing yet.*
+---
 
-> [!TIP]
-> When a new version is released, move the contents of `[Unreleased]` into a new version block and create a fresh `[Unreleased]` section.
+## [0.9.0] - 2026-06-15
+*Beta Architecture Finalization*
+
+### Added
+- Initial setup of Express backend and Prisma ORM.
+- Implementation of the `pdf-parse` text extraction worker.
+- Setup of the vector database extension in PostgreSQL.
+- Creation of the core UI Design System using Shadcn/Tailwind.

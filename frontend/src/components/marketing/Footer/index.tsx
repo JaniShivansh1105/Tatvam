@@ -49,8 +49,8 @@ export function Footer() {
           {/* Links Col 2 */}
           <div className="flex flex-col gap-4">
             <h4 className="text-[14px] font-bold text-[#1B1D35] tracking-wider uppercase mb-2">Legal</h4>
-            <Link href={ROUTES.PRIVACY} className="text-[14px] text-[#6B7280] hover:text-[#6C5CE7] transition-colors">Privacy Policy</Link>
-            <Link href={ROUTES.TERMS} className="text-[14px] text-[#6B7280] hover:text-[#6C5CE7] transition-colors">Terms & Conditions</Link>
+            <Link href={ROUTES.PRIVACY} target="_blank" className="text-[14px] text-[#6B7280] hover:text-[#6C5CE7] transition-colors">Privacy Policy</Link>
+            <Link href={ROUTES.TERMS} target="_blank" className="text-[14px] text-[#6B7280] hover:text-[#6C5CE7] transition-colors">Terms & Conditions</Link>
           </div>
 
         </div>
