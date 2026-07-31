@@ -4,6 +4,13 @@
   "private": true,
   "type": "module",
   "description": "Tatvam API — AI-first Learning Companion backend",
+  "author": "Maverick Effect",
+  "license": "Proprietary",
+  "keywords": ["ai", "api", "backend", "express", "prisma"],
+  "homepage": "https://tatvam.ai",
+  "bugs": {
+    "url": "https://tatvam.ai/support"
+  },
   "scripts": {
     "dev": "tsx watch --clear-screen=false --exclude \"uploads/**\" src/server.ts",
     "build": "tsc",

@@ -490,7 +490,7 @@ export default function RegisterPage() {
                     <span className="text-[13px] text-[#4A5568] leading-snug select-none">
                       {accountType === "STUDENT" 
                         ? <>I have read and agree to the <Link href="/terms-and-conditions" target="_blank" className="text-[#6C5CE7] hover:underline">Terms of Service</Link> and <Link href="/privacy-policy" target="_blank" className="text-[#6C5CE7] hover:underline">Privacy Policy</Link>. If I am under the minimum age required in my region, I confirm that I have permission from my parent or legal guardian to use Tatvam.</>
-                        : <>I confirm that I am the parent or legal guardian of the learner and agree to the <Link href="/terms-and-conditions" target="_blank" className="text-[#6C5CE7] hover:underline">Terms of Service</Link>, <Link href="/privacy-policy" target="_blank" className="text-[#6C5CE7] hover:underline">Privacy Policy</Link> and <Link href="/parent-responsibilities" className="text-[#6C5CE7] hover:underline">Parent Responsibilities</Link>.</>
+                        : <>I confirm that I am the parent or legal guardian of the learner and agree to the <Link href="/terms-and-conditions" target="_blank" className="text-[#6C5CE7] hover:underline">Terms of Service</Link> and <Link href="/privacy-policy" target="_blank" className="text-[#6C5CE7] hover:underline">Privacy Policy</Link>.</>
                       }
                     </span>
                   </label>

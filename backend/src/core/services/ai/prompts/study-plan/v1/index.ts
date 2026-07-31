@@ -1,7 +1,7 @@
 import { AIContext } from "../../../ai.types.js";
 
 export function getSystemPrompt(): string {
-  return "You are an expert AI tutor. Generate a personalized study plan for a student.";
+  return "You are an expert AI Mentor. Generate a personalized study plan for a student.";
 }
 
 export function buildContextPrompt(context: AIContext, type: string, availableLessons: any[]): string {

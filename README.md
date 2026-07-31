@@ -3,7 +3,7 @@
 # Tatvam
 **AI-First Adaptive Learning Companion**
 
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)]()
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](#14-license)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.0-black?logo=next.js)](https://nextjs.org/)
 [![Express](https://img.shields.io/badge/Express-4.18-lightgrey?logo=express)](https://expressjs.com/)
@@ -11,7 +11,7 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.0-336791?logo=postgresql)](https://www.postgresql.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css)](https://tailwindcss.com/)
 [![Google Gemini](https://img.shields.io/badge/AI-Google_Gemini-4285F4?logo=google)](https://deepmind.google/technologies/gemini/)
-[![Project Status](https://img.shields.io/badge/Status-Active_Development-success.svg)]()
+[![Project Status](https://img.shields.io/badge/Status-Active_Development-success.svg)](#)
 
 *Transforming education from static consumption to dynamic, personalized comprehension.*
 
@@ -497,19 +497,19 @@ Tatvam/
 ## 11. Screenshots
 
 ### Dashboard
-![Dashboard Placeholder](/public/logos/tatvam-logo.png)
+![Screenshot Placeholder](/public/logos/tatvam-logo.png)
 *A centralized view of daily progress, active modules, and quick actions.*
 
 ### Knowledge Workspace
-![Knowledge Placeholder](/public/logos/tatvam-logo.png)
+![Screenshot Placeholder](/public/logos/tatvam-logo.png)
 *A split-pane environment featuring the document viewer on the left and the AI Mentor on the right.*
 
 ### AI Mentor Chat
-![Mentor Placeholder](/public/logos/tatvam-logo.png)
+![Screenshot Placeholder](/public/logos/tatvam-logo.png)
 *Streaming native-language responses tailored to the user's specific query.*
 
 ### Settings & Localization
-![Settings Placeholder](/public/logos/tatvam-logo.png)
+![Screenshot Placeholder](/public/logos/tatvam-logo.png)
 *Deep configuration allowing immediate application-wide language shifts.*
 
 ---
