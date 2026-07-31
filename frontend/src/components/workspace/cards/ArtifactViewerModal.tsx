@@ -9,10 +9,18 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
-export const ArtifactViewerModal = ({ artifact, onClose }: { artifact: any, onClose: () => void }) => {
-  if (!artifact) return null;
+import { createPortal } from 'react-dom';
 
-  return (
+export const ArtifactViewerModal = ({ artifact, onClose }: { artifact: any, onClose: () => void }) => {
+  const [mounted, setMounted] = useState(false);
+  
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!artifact || !mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       <div className="fixed inset-0 bg-[#1B1D35]/50 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <motion.div 
@@ -36,9 +44,35 @@ export const ArtifactViewerModal = ({ artifact, onClose }: { artifact: any, onCl
                 </div>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 rounded-xl text-[#A0AEC0] hover:text-[#1B1D35] hover:bg-[#F8F9FF] transition-colors border border-transparent hover:border-[#E2E8F0] hover:shadow-sm">
-              <X size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => {
+                const text = typeof artifact.content === 'string' ? artifact.content : JSON.stringify(artifact.content, null, 2);
+                navigator.clipboard.writeText(text);
+              }} className="p-2 rounded-xl text-[#A0AEC0] hover:text-[#1B1D35] hover:bg-[#F8F9FF] transition-colors border border-transparent hover:border-[#E2E8F0] hover:shadow-sm" title="Copy Content">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              </button>
+              <button onClick={() => {
+                const text = typeof artifact.content === 'string' ? artifact.content : JSON.stringify(artifact.content, null, 2);
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${artifact.title}.txt`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }} className="p-2 rounded-xl text-[#A0AEC0] hover:text-[#1B1D35] hover:bg-[#F8F9FF] transition-colors border border-transparent hover:border-[#E2E8F0] hover:shadow-sm" title="Download">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              </button>
+              <button onClick={() => {
+                window.print();
+              }} className="p-2 rounded-xl text-[#A0AEC0] hover:text-[#1B1D35] hover:bg-[#F8F9FF] transition-colors border border-transparent hover:border-[#E2E8F0] hover:shadow-sm" title="Print">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              </button>
+              <div className="w-px h-6 bg-[#E2E8F0] mx-1" />
+              <button onClick={onClose} className="p-2 rounded-xl text-[#A0AEC0] hover:text-[#1B1D35] hover:bg-[#F8F9FF] transition-colors border border-transparent hover:border-[#E2E8F0] hover:shadow-sm">
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Content Body */}
@@ -47,7 +81,8 @@ export const ArtifactViewerModal = ({ artifact, onClose }: { artifact: any, onCl
           </div>
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

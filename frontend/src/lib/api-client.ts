@@ -9,10 +9,18 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
+  const state = useAuthStore.getState();
+  const token = state.accessToken;
+  const prefLang = state.user?.profile?.preferredLanguage || state.user?.preference?.language?.name;
+  
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  if (prefLang && config.headers) {
+    config.headers['X-Preferred-Language'] = prefLang;
+  }
+  
   return config;
 });
 

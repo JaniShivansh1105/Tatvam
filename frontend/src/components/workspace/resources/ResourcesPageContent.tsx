@@ -11,9 +11,13 @@ const MOCK_RESOURCES = [
   { id: 4, title: 'Database Indexing Quiz', type: 'Quiz', lastModified: '2026-07-24', icon: BookMarked, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
 ];
 
+import { ArtifactViewerModal } from '../cards/ArtifactViewerModal';
+
 export default function ResourcesPageContent() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedResource, setSelectedResource] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState('All');
 
   const [resources, setResources] = useState<any[]>([]);
 
@@ -40,6 +44,14 @@ export default function ResourcesPageContent() {
     fetchArtifacts();
   }, []);
 
+  const filteredResources = resources.filter(res => {
+    if (activeTab === 'All') return true;
+    if (activeTab === 'Notes') return res.artifactType === 'Notes' || res.artifactType === 'Smart Notes';
+    if (activeTab === 'Flashcards') return res.artifactType === 'Flashcards';
+    if (activeTab === 'Quizzes') return res.artifactType === 'Quizzes';
+    return true;
+  });
+
   return (
     <div className="flex-1 flex flex-col h-full bg-[#F8F9FF] text-[#4A5568] relative overflow-hidden rounded-[24px]">
       
@@ -49,10 +61,10 @@ export default function ResourcesPageContent() {
           <h1 className="text-[19px] font-semibold text-[#1B1D35] tracking-tight">Study Resources</h1>
           <div className="h-6 w-px bg-[#E2E8F0]" />
           <nav className="flex gap-1">
-            <ResourceTab name="All" active={true} />
-            <ResourceTab name="Notes" active={false} />
-            <ResourceTab name="Flashcards" active={false} />
-            <ResourceTab name="Quizzes" active={false} />
+            <ResourceTab name="All" active={activeTab === 'All'} onClick={() => setActiveTab('All')} />
+            <ResourceTab name="Notes" active={activeTab === 'Notes'} onClick={() => setActiveTab('Notes')} />
+            <ResourceTab name="Flashcards" active={activeTab === 'Flashcards'} onClick={() => setActiveTab('Flashcards')} />
+            <ResourceTab name="Quizzes" active={activeTab === 'Quizzes'} onClick={() => setActiveTab('Quizzes')} />
           </nav>
         </div>
 
@@ -87,11 +99,11 @@ export default function ResourcesPageContent() {
             </div>
           ) : (
             <div className={`grid gap-5 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
-              {resources.length > 0 ? resources.map(res => (
-                <ResourceCard key={res.id} resource={res} viewMode={viewMode} />
+              {filteredResources.length > 0 ? filteredResources.map(res => (
+                <ResourceCard key={res.id} resource={res} viewMode={viewMode} onClick={() => setSelectedResource(res)} />
               )) : (
                 <div className="col-span-full py-12 text-center text-[#A0AEC0]">
-                  No resources generated yet. Upload a document to automatically generate study resources.
+                  No resources generated yet for this category. Upload a document to automatically generate study resources.
                 </div>
               )}
             </div>
@@ -99,19 +111,23 @@ export default function ResourcesPageContent() {
         </div>
       </main>
 
+      {selectedResource && (
+        <ArtifactViewerModal artifact={selectedResource} onClose={() => setSelectedResource(null)} />
+      )}
     </div>
   );
 }
 
-const ResourceTab = ({ name, active }: { name: string, active: boolean }) => (
+const ResourceTab = ({ name, active, onClick }: { name: string, active: boolean, onClick: () => void }) => (
   <button 
+    onClick={onClick}
     className={`px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors ${active ? 'bg-white text-[#6C5CE7] shadow-sm border border-[#E2E8F0]' : 'text-[#718096] hover:text-[#4A5568] hover:bg-white/50 border border-transparent'}`}
   >
     {name}
   </button>
 );
 
-const ResourceCard = ({ resource, viewMode }: { resource: any, viewMode: 'grid' | 'list' }) => {
+const ResourceCard = ({ resource, viewMode, onClick }: { resource: any, viewMode: 'grid' | 'list', onClick: () => void }) => {
   const isGrid = viewMode === 'grid';
   const Icon = resource.icon;
 
@@ -120,6 +136,7 @@ const ResourceCard = ({ resource, viewMode }: { resource: any, viewMode: 'grid' 
       layout
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
+      onClick={onClick}
       className={`group relative bg-white border border-[#E2E8F0] rounded-[16px] hover:border-[#6C5CE7]/40 hover:shadow-md transition-all cursor-pointer overflow-hidden ${isGrid ? 'p-4 flex flex-col h-40' : 'p-3 flex items-center gap-4'}`}
     >
       <div className={`flex items-start ${isGrid ? 'flex-col gap-3 flex-1' : 'gap-4 w-full items-center'}`}>

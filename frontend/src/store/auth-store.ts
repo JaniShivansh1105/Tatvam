@@ -80,9 +80,10 @@ export const useAuthStore = create<AuthState>()(
               hasCompletedOnboarding: isCompleted,
             });
 
-            if (fetchedUser?.preference?.language?.name) {
+            const prefLang = fetchedUser?.profile?.preferredLanguage || fetchedUser?.preference?.language?.name;
+            if (prefLang) {
               const { useEngineStore } = await import("./engine-store");
-              useEngineStore.getState().setLanguage(fetchedUser.preference.language.name);
+              useEngineStore.getState().setLanguage(prefLang);
             }
           } catch {
             set({

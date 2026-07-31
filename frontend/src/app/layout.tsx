@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { ReactQueryProvider } from "@/components/providers/QueryProvider";
+import { GoogleTranslate } from "@/components/providers/GoogleTranslate";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
           <TooltipProvider delayDuration={150}>
             <ReactQueryProvider>
               <LayoutProvider>
+                <GoogleTranslate />
                 <AuthProvider>{children}</AuthProvider>
                 <Toaster position="bottom-right" toastOptions={{ className: 'text-sm font-medium', style: { borderRadius: '12px', padding: '16px', color: '#1B1D35', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' } }} />
               </LayoutProvider>

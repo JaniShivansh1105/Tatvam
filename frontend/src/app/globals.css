@@ -104,3 +104,14 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Hide Google Translate Banner and reset body top */
+body {
+  top: 0 !important;
+}
+.skiptranslate {
+  display: none !important;
+}
+#google_translate_element {
+  display: none !important;
+}

@@ -7,6 +7,7 @@ export class AIController {
   async chat(req: Request, res: Response) {
     const userId = req.user!.userId;
     const { messages, context, provider = "gemini" } = req.body;
+    const prefLang = req.headers["x-preferred-language"] as string || "English";
 
     // Set headers for Server-Sent Events (SSE)
     res.setHeader("Content-Type", "text/event-stream");
@@ -14,7 +15,7 @@ export class AIController {
     res.setHeader("Connection", "keep-alive");
 
     try {
-      const stream = await chatStreamUseCase.execute(userId, messages, context, provider);
+      const stream = await chatStreamUseCase.execute(userId, messages, context, provider, prefLang);
 
       for await (const chunk of stream) {
         res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
@@ -84,9 +85,10 @@ export class AIController {
   async generateArtifact(req: Request, res: Response) {
     const userId = req.user!.userId;
     const { artifactType, requestContent, lessonId } = req.body;
+    const prefLang = req.headers["x-preferred-language"] as string || "English";
     try {
       const { aiService } = await import("../../../di/container.js");
-      const artifact = await aiService.generateStudyArtifact(userId, artifactType, requestContent, lessonId);
+      const artifact = await aiService.generateStudyArtifact(userId, artifactType, requestContent, lessonId, prefLang);
       res.json({ success: true, data: artifact });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to generate artifact" });

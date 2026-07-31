@@ -124,6 +124,21 @@ export const KnowledgeBaseTab = () => {
           </section>
         )}
 
+        {data.importantTopics && data.importantTopics.length > 0 && (
+          <section className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
+            <h3 className="text-lg font-bold text-[#1B1D35] flex items-center gap-2 mb-4">
+              <Lightbulb className="text-[#9F7AEA]" size={20} /> Important Topics
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {data.importantTopics.map((t: string, i: number) => (
+                <span key={i} className="px-3 py-1.5 bg-[#FAF5FF] text-[#805AD5] rounded-lg text-sm font-bold border border-[#D6BCFA]">
+                  {t}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
         {data.relationships && data.relationships.length > 0 && (
           <section className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
             <h3 className="text-lg font-bold text-[#1B1D35] flex items-center gap-2 mb-4">
@@ -137,6 +152,40 @@ export const KnowledgeBaseTab = () => {
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {data.dependencies && data.dependencies.length > 0 && (
+          <section className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
+            <h3 className="text-lg font-bold text-[#1B1D35] flex items-center gap-2 mb-4">
+              <LinkIcon className="text-[#ED8936]" size={20} /> Prerequisites
+            </h3>
+            <ul className="space-y-3">
+              {data.dependencies.map((d: string, i: number) => (
+                <li key={i} className="flex gap-3 text-sm text-[#4A5568]">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#ED8936] shrink-0 mt-2" />
+                  <span className="leading-relaxed">{d}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {data.learningGraph && data.learningGraph.length > 0 && (
+          <section className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
+            <h3 className="text-lg font-bold text-[#1B1D35] flex items-center gap-2 mb-4">
+              <LayoutDashboard className="text-[#48BB78]" size={20} /> Knowledge Graph
+            </h3>
+            <div className="bg-[#F0FFF4] border border-[#C6F6D5] rounded-xl p-4 font-mono text-sm text-[#276749] overflow-x-auto">
+              <ul className="space-y-2">
+                {data.learningGraph.map((node: string, i: number) => (
+                  <li key={i} className="flex items-center gap-2 whitespace-nowrap">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#48BB78] shrink-0" />
+                    {node}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </section>
         )}
 

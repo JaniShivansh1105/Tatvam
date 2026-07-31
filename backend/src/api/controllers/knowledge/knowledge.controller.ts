@@ -215,8 +215,20 @@ export class KnowledgeController {
 
       const seenDefs = new Set<string>();
 
+      const { documentPipeline } = await import("../../../di/container.js");
       for (const doc of documents) {
         const metadata = doc.metadata as any;
+        console.log(`\n[4. Verification] GET /knowledge/context processing document ${doc.id}`);
+        console.log(`Document title: ${doc.title}`);
+        console.log(`Document status: ${doc.status}`);
+        console.log(`Has metadata?: ${!!metadata}`);
+        console.log(`Has metadata.extractedKnowledge?: ${!!metadata?.extractedKnowledge}`);
+
+        if (!metadata || !metadata.extractedKnowledge) {
+          console.log(`[Knowledge API] Triggering auto-recovery for missing knowledge in document ${doc.id}`);
+          documentPipeline.autoRecoverDocument(doc.id).catch((e: any) => console.error(e));
+          continue;
+        }
         if (metadata && metadata.extractedKnowledge) {
           const ek = metadata.extractedKnowledge;
           if (Array.isArray(ek.concepts)) ek.concepts.forEach((c: string) => aggregatedData.concepts.add(c));

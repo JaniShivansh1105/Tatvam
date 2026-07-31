@@ -17,6 +17,7 @@ export const registerSchema = z.object({
     countryCode: z.string().min(1).trim().optional(),
     mobileNumber: z.string().min(7).trim().optional(),
     termsAccepted: z.boolean().refine(val => val === true, "Must accept terms"),
+    preferredLanguage: z.string().optional(),
   }),
 });
 

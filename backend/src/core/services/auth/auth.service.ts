@@ -45,7 +45,7 @@ const safeUserSelect = {
 
 export class AuthService {
   async register(data: RegisterData, sessionInfo: SessionInfo) {
-    const { email, password, fullName, username, accountType, countryCode, mobileNumber, termsAccepted } = data;
+    const { email, password, fullName, username, accountType, countryCode, mobileNumber, termsAccepted, preferredLanguage } = data;
 
     // 1. Perform reads outside the transaction
     const existingUser = await prisma.user.findFirst({
@@ -80,17 +80,18 @@ export class AuthService {
     const hashedRefreshToken = await hashPassword(refreshTokenString);
 
     // 3. Resolve language dependencies outside the transaction
+    const targetLangName = preferredLanguage || "English";
     let defaultLang = await prisma.language.findFirst({
-      where: { active: true },
+      where: { name: targetLangName, active: true },
       select: { id: true },
     });
 
     if (!defaultLang) {
       defaultLang = await prisma.language.create({
         data: {
-          name: "English",
-          code: "en",
-          nativeName: "English",
+          name: targetLangName,
+          code: targetLangName.substring(0, 2).toLowerCase(),
+          nativeName: targetLangName,
         },
         select: { id: true },
       });
@@ -110,7 +111,9 @@ export class AuthService {
         termsAccepted,
         termsAcceptedAt: termsAccepted ? new Date() : null,
         profile: {
-          create: {},
+          create: {
+            preferredLanguage: targetLangName
+          },
         },
         preference: {
           create: {
@@ -486,8 +489,8 @@ export class AuthService {
     return;
   }
 
-  async updateProfile(userId: string, data: { fullName?: string; bio?: string; country?: string; timezone?: string; dna?: any }) {
-    const { fullName, bio, country, timezone, dna } = data;
+  async updateProfile(userId: string, data: { fullName?: string; bio?: string; country?: string; timezone?: string; dna?: any; preferredLanguage?: string; nativeLanguage?: string; secondaryLanguage?: string }) {
+    const { fullName, bio, country, timezone, dna, preferredLanguage, nativeLanguage, secondaryLanguage } = data;
     
     if (fullName) {
       await prisma.user.update({
@@ -503,11 +506,17 @@ export class AuthService {
         bio: bio || null,
         country: country || null,
         timezone: timezone || "UTC",
+        preferredLanguage: preferredLanguage || "English",
+        nativeLanguage: nativeLanguage || "",
+        secondaryLanguage: secondaryLanguage || "",
       },
       update: {
         ...(bio !== undefined && { bio }),
         ...(country !== undefined && { country }),
         ...(timezone !== undefined && { timezone }),
+        ...(preferredLanguage !== undefined && { preferredLanguage }),
+        ...(nativeLanguage !== undefined && { nativeLanguage }),
+        ...(secondaryLanguage !== undefined && { secondaryLanguage }),
       },
     });
 

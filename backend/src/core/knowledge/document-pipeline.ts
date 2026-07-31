@@ -33,12 +33,15 @@ export class DocumentPipeline {
 
       await this.eventBus.publish(DomainEvents.DocumentUploaded, { documentId, collectionId, userId: metadata.userId || "unknown_user", title });
 
-      // Run heavy processing asynchronously without awaiting
-      this._processDocumentBackground(documentId, collectionId, title, content, metadata, processingStart).catch(err => {
-        Logger.error("Background ingestion wrapper failed", err, { documentId });
+      // Run heavy processing synchronously
+      await this._processDocumentBackground(documentId, collectionId, title, content, metadata, processingStart);
+
+      const { prisma } = await import("../../data/prisma.js");
+      const updatedDocument = await prisma.knowledgeDocument.findUnique({
+        where: { id: documentId }
       });
 
-      return document;
+      return updatedDocument || document;
     } catch (error: any) {
       Logger.error("Document registration failed", error);
       throw error;
@@ -192,7 +195,9 @@ export class DocumentPipeline {
 
         const result = await model.generateContent(prompt);
         let responseText = result.response.text();
+        responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
         const extractedKnowledge = JSON.parse(responseText);
+        console.log(`\n\n[1. Verification] Extracted Knowledge Generated: ${!!extractedKnowledge} | Concepts count: ${extractedKnowledge?.concepts?.length || 0}`);
 
         await prisma.knowledgeDocument.update({
           where: { id: documentId },
@@ -203,6 +208,15 @@ export class DocumentPipeline {
             }
           }
         });
+        console.log(`[2. Verification] Prisma update() completed.`);
+
+        const verifDoc = await prisma.knowledgeDocument.findUnique({ where: { id: documentId } });
+        const verifMetadata = verifDoc?.metadata as any;
+        console.log(`[3. Verification] Immediately after update, read document metadata:`);
+        console.log(`Has extractedKnowledge?: ${!!verifMetadata?.extractedKnowledge}`);
+        if (!verifMetadata?.extractedKnowledge) {
+          console.error(`ERROR: extractedKnowledge is missing from DB metadata! Saving failed!`);
+        }
       }, 3);
       console.log(`[${extractStageIndex}/10] ${currentStageName}\n✓ Success\n\n↓\n`);
 
@@ -252,6 +266,129 @@ export class DocumentPipeline {
         }
       });
       Logger.error(`Document ingestion background processing failed at ${currentStageName}`, error, { documentId });
+    }
+  }
+
+  /**
+   * Auto-recover a completed document that is missing its extracted knowledge or resources.
+   * This retrieves chunks from the database to reconstruct content.
+   */
+  async autoRecoverDocument(documentId: string): Promise<void> {
+    const { prisma } = await import("../../data/prisma.js");
+    const doc = await prisma.knowledgeDocument.findUnique({ 
+      where: { id: documentId },
+      include: { collection: true }
+    });
+    if (!doc) return;
+    
+    const metadata = doc.metadata as any;
+    if (doc.status === "Completed" && metadata && metadata.extractedKnowledge) {
+      return; // Already good
+    }
+    
+    // Attempt recovery
+    console.log(`[AutoRecovery] Starting recovery for ${documentId}`);
+    try {
+      const versions = await prisma.documentVersion.findMany({ 
+        where: { documentId: doc.id }, 
+        include: { chunks: true },
+        orderBy: { createdAt: 'desc' },
+        take: 1
+      });
+      
+      if (!versions.length || !versions[0].chunks.length) {
+        console.log(`[AutoRecovery] No chunks found for ${documentId}`);
+        return;
+      }
+      
+      const chunks = versions[0].chunks;
+      const combinedText = chunks.slice(0, 30).map(c => c.content).join("\n\n");
+      const userId = metadata?.userId || doc.collection.ownerId;
+      const title = doc.title;
+
+      const withRetry = async <T>(fn: () => Promise<T>, retries = 3): Promise<T> => {
+        let lastErr;
+        for (let attempt = 1; attempt <= retries; attempt++) {
+          try { return await fn(); }
+          catch (e) {
+            lastErr = e;
+            if (attempt < retries) await new Promise(r => setTimeout(r, 1000 * attempt));
+          }
+        }
+        throw lastErr;
+      };
+
+      // 1. Regenerate Resources
+      const { aiService } = await import("../../di/container.js");
+      await withRetry(async () => {
+        const flashcardsArtifact = await aiService.generateStudyArtifact(userId, "Flashcards", `Important concepts from ${title}`);
+        await prisma.educationalArtifact.create({
+          data: {
+            title: flashcardsArtifact.title,
+            artifactType: "Flashcards",
+            description: flashcardsArtifact.description,
+            content: flashcardsArtifact.content,
+            tags: flashcardsArtifact.tags,
+            ownerId: userId,
+            sourceKnowledgeIds: [documentId]
+          }
+        });
+        
+        const notesArtifact = await aiService.generateStudyArtifact(userId, "Smart Notes", `Key summary and notes from ${title}`);
+        await prisma.educationalArtifact.create({
+          data: {
+            title: notesArtifact.title,
+            artifactType: "Smart Notes",
+            description: notesArtifact.description,
+            content: notesArtifact.content,
+            tags: notesArtifact.tags,
+            ownerId: userId,
+            sourceKnowledgeIds: [documentId]
+          }
+        });
+      }, 3);
+      console.log(`[AutoRecovery] Generated resources for ${documentId}`);
+
+      // 2. Extract Knowledge Graph
+      const { GoogleGenerativeAI } = await import("@google/generative-ai");
+      const { env } = await import("../../config/env.js");
+      const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY || "");
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest", generationConfig: { responseMimeType: "application/json" } });
+
+      const prompt = `Based ONLY on the following text extracted from the user's uploaded documents, extract and generate a JSON object with these exact keys (arrays of strings or objects):
+      - "concepts" (array of strings)
+      - "definitions" (array of objects { term: string, definition: string })
+      - "formulae" (array of strings)
+      - "relationships" (array of strings)
+      - "dependencies" (array of strings)
+      - "learningGraph" (array of strings)
+      - "importantTopics" (array of strings)
+      
+      If the text doesn't contain formulae, return an empty array for it. Do NOT use any external knowledge.
+      
+      TEXT:
+      ${combinedText.substring(0, 30000)}
+      
+      Respond with ONLY the JSON object, no markdown blocks.`;
+
+      const result = await withRetry(() => model.generateContent(prompt), 3);
+      let responseText = result.response.text();
+      responseText = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
+      const extractedKnowledge = JSON.parse(responseText);
+
+      await prisma.knowledgeDocument.update({
+        where: { id: documentId },
+        data: {
+          status: "Completed",
+          metadata: {
+            ...(metadata || {}),
+            extractedKnowledge
+          }
+        }
+      });
+      console.log(`[AutoRecovery] Successfully recovered ${documentId}`);
+    } catch (err: any) {
+      console.error(`[AutoRecovery] Failed for ${documentId}: ${err.message}`);
     }
   }
 }

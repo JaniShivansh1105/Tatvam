@@ -10,7 +10,7 @@ export class AIService {
     this.orchestrator = new AIOrchestrator(eventBus);
   }
 
-  async *chatStream(userId: string, messages: any[], context: Record<string, any>, _provider: string = "gemini") {
+  async *chatStream(userId: string, messages: any[], context: Record<string, any>, _provider: string = "gemini", preferredLanguage: string = "English") {
     const lessonId = context.lessonId as string | undefined;
     const sessionId = context.sessionId as string | undefined;
 
@@ -65,7 +65,10 @@ CRITICAL INSTRUCTION: You MUST ALWAYS conclude your response with a clear, perso
 - What to practice: (Suggested practice types)
 - Suggested next concept: (What they should learn next)
 - Estimated mastery: (A realistic percentage e.g., 75%)
-- Revision reminder: (When they should revisit this topic)`;
+- Revision reminder: (When they should revisit this topic)
+
+Preferred Language: ${preferredLanguage}
+YOU MUST RESPOND ENTIRELY IN ${preferredLanguage}. Do NOT generate English and translate afterwards. Generate your response natively in ${preferredLanguage}.`;
     
     if (context.strategy) {
       systemInstruction += `\nYour current pedagogical strategy is: ${context.strategy}. Please adhere to this strategy in your response.`;
@@ -109,7 +112,8 @@ Adapt your explanation length and detail level according to these preferences.`;
       // 3. Search Vector Database scoped to user's collection
       let results: any[] = [];
       if (collection) {
-        results = await vectorRepo.searchSimilar(queryVector, collection.id, 5);
+        const filters = context.documentId ? { documentId: context.documentId } : undefined;
+        results = await vectorRepo.searchSimilar(queryVector, collection.id, 5, filters);
       }
       
       if (results && results.length > 0) {
@@ -253,7 +257,7 @@ Adapt your explanation length and detail level according to these preferences.`;
     return this.orchestrator.execute("recommendation", userId, { stats, nextLesson });
   }
 
-  async generateStudyArtifact(userId: string, artifactType: string, requestContent: string, lessonId?: string): Promise<any> {
+  async generateStudyArtifact(userId: string, artifactType: string, requestContent: string, lessonId?: string, preferredLanguage: string = "English"): Promise<any> {
     let ragContext = "";
     try {
       const { embeddingProvider, vectorRepo } = await import("../../../di/container.js");
@@ -288,6 +292,9 @@ Format your output as raw JSON without markdown code blocks. The JSON must have:
   "content": { <the actual artifact data based on type, e.g. an array of flashcards> }
 }
 ${ragContext}
+
+Preferred Language: ${preferredLanguage}
+YOU MUST RESPOND ENTIRELY IN ${preferredLanguage}. Do NOT generate English and translate afterwards. Generate your response natively in ${preferredLanguage}.
 `;
 
     const userPrompt = `Generate a ${artifactType} for: ${requestContent}`;

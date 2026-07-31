@@ -83,17 +83,12 @@ export default function SettingsPage() {
     }
   };
 
-  const handleLanguageChange = (field: 'preferred' | 'native' | 'secondary', lang: string) => {
-    if (field === 'preferred') {
-      setPreferredLanguage(lang);
-      updateProfileMutation.mutate({ preferredLanguage: lang });
-    } else if (field === 'native') {
-      setNativeLanguage(lang);
-      updateProfileMutation.mutate({ nativeLanguage: lang });
-    } else if (field === 'secondary') {
-      setSecondaryLanguage(lang);
-      updateProfileMutation.mutate({ secondaryLanguage: lang });
-    }
+  const handleSaveLanguagePreferences = () => {
+    updateProfileMutation.mutate({ 
+      preferredLanguage, 
+      nativeLanguage, 
+      secondaryLanguage 
+    });
   };
 
   const handleThemeChange = (newTheme: string) => {
@@ -186,7 +181,7 @@ export default function SettingsPage() {
                           <label className="block text-[13px] font-bold text-[#4A5568] mb-2">Preferred Language (AI Explanations)</label>
                           <select 
                             value={preferredLanguage}
-                            onChange={(e) => handleLanguageChange('preferred', e.target.value)}
+                            onChange={(e) => setPreferredLanguage(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px]"
                           >
                             <option value="English">English</option>
@@ -202,7 +197,7 @@ export default function SettingsPage() {
                             <label className="block text-[13px] font-bold text-[#4A5568] mb-2">Native Language</label>
                             <select 
                               value={nativeLanguage}
-                              onChange={(e) => handleLanguageChange('native', e.target.value)}
+                              onChange={(e) => setNativeLanguage(e.target.value)}
                               className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px]"
                             >
                               <option value="">None</option>
@@ -216,7 +211,7 @@ export default function SettingsPage() {
                             <label className="block text-[13px] font-bold text-[#4A5568] mb-2">Secondary Language</label>
                             <select 
                               value={secondaryLanguage}
-                              onChange={(e) => handleLanguageChange('secondary', e.target.value)}
+                              onChange={(e) => setSecondaryLanguage(e.target.value)}
                               className="w-full px-4 py-3 rounded-xl border border-[#E2E8F0] bg-[#F8F9FF] focus:bg-white focus:border-[#6C5CE7] outline-none transition-all text-[14px]"
                             >
                               <option value="">None</option>
@@ -226,6 +221,20 @@ export default function SettingsPage() {
                               <option value="Spanish">Spanish</option>
                             </select>
                           </div>
+                        </div>
+                        
+                        <div className="pt-4 flex justify-end">
+                          <button
+                            onClick={handleSaveLanguagePreferences}
+                            disabled={updateProfileMutation.isPending}
+                            className="flex items-center gap-2 px-6 py-2.5 bg-[#6C5CE7] text-white text-[14px] font-bold rounded-xl hover:bg-[#5A4FCF] transition-all disabled:opacity-50"
+                          >
+                            {updateProfileMutation.isPending ? (
+                              <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                            ) : (
+                              "Save Preferences"
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
